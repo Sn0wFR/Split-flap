@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SplitFlap } from "../src/core.js";
+import { stubAudio } from "./audio-stub.js";
 
 let host: HTMLElement;
 
@@ -315,6 +316,95 @@ describe("animation", () => {
     expect(board.isAnimating).toBe(false);
     expect(readTop(board)).toBe(readBottom(board));
     expect(board.value).toBe(readTop(board).replace(/\s+$/, ""));
+  });
+});
+
+describe("sound", () => {
+  const boards: SplitFlap[] = [];
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    // The AudioContext is shared and reference-counted at module scope, so
+    // a clicker left open here would still be holding the previous test's
+    // stub when the next one starts counting.
+    for (const board of boards.splice(0)) board.destroy();
+    vi.unstubAllGlobals();
+  });
+
+  const mount = (options: ConstructorParameters<typeof SplitFlap>[1]) => {
+    const board = new SplitFlap(host, options);
+    boards.push(board);
+    return board;
+  };
+
+  /** Board that takes many steps to settle, so it can be poked mid-flight. */
+  const longRunner = () =>
+    mount({
+      value: "A",
+      length: 1,
+      chars: "letters",
+      duration: 20,
+      stagger: 0,
+      jitter: 0,
+      minSteps: 40,
+    });
+
+  it("clicks once per flip while sound is on", async () => {
+    const audio = stubAudio();
+    const board = mount({
+      value: "A",
+      length: 1,
+      chars: " AB",
+      duration: 10,
+      stagger: 0,
+      jitter: 0,
+      sound: true,
+    });
+
+    const settled = board.set("B");
+    await vi.advanceTimersByTimeAsync(100);
+    await settled;
+
+    expect(audio.clicks()).toBe(1);
+  });
+
+  it("falls silent the moment sound is switched off mid-flight", async () => {
+    const audio = stubAudio();
+    const board = longRunner();
+    board.setOptions({ sound: true });
+
+    void board.set("Z");
+    await vi.advanceTimersByTimeAsync(100);
+    const heard = audio.clicks();
+    expect(heard).toBeGreaterThan(0);
+
+    board.setOptions({ sound: false });
+    await vi.advanceTimersByTimeAsync(300);
+
+    expect(audio.clicks()).toBe(heard);
+  });
+
+  it("resumes clicking when sound comes back mid-flight", async () => {
+    const audio = stubAudio();
+    const board = longRunner();
+    board.setOptions({ sound: true });
+
+    void board.set("Z");
+    await vi.advanceTimersByTimeAsync(60);
+
+    board.setOptions({ sound: false });
+    await vi.advanceTimersByTimeAsync(60);
+    const whileMuted = audio.clicks();
+
+    // Back on without starting a new value: the clicker has to be rebuilt
+    // on the next step rather than waiting for the next set().
+    board.setOptions({ sound: true });
+    await vi.advanceTimersByTimeAsync(120);
+
+    expect(audio.clicks()).toBeGreaterThan(whileMuted);
   });
 });
 
