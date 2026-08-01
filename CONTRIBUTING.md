@@ -60,8 +60,22 @@ Publishing reads `NPM_TOKEN` from the `npm` environment rather than from the
 repository secrets, so the token is restricted to `main` by that environment's
 deployment-branch rule and cannot be read from a pull request branch.
 
-While the package is below `1.0.0`, a `feat` bumps the minor and everything else
-bumps the patch, breaking changes included.
+The first release is pinned to `0.1.0` by `initial-version`. Without it
+release-please would open at `1.0.0`, since it treats a repository with no tag
+as shipping its initial version.
+
+While the package is below `1.0.0` the minor is reserved for breaking changes,
+so the bumps read:
+
+| Commit         | Bump  | Example        |
+| -------------- | ----- | -------------- |
+| breaking (`!`) | minor | 0.1.0 -> 0.2.0 |
+| `feat`         | patch | 0.1.0 -> 0.1.1 |
+| `fix`, `perf`  | patch | 0.1.0 -> 0.1.1 |
+
+This is what `bump-minor-pre-major` and `bump-patch-for-minor-pre-major` do in
+`release-please-config.json`. Both stop applying at `1.0.0`, where the bumps
+become plain semver.
 
 ## Notes on the code
 

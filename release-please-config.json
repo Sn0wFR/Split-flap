@@ -5,6 +5,7 @@
       "release-type": "node",
       "package-name": "@sn0wfr/split-flap",
       "changelog-path": "CHANGELOG.md",
+      "initial-version": "0.1.0",
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
       "draft": false,
