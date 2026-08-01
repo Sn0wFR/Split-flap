@@ -2,7 +2,7 @@ name: Release
 
 on:
   push:
-    branches: [master]
+    branches: [main]
 
 permissions:
   contents: write
@@ -16,7 +16,7 @@ jobs:
       tag: ${{ steps.release.outputs.tag_name }}
     steps:
       # Opens (and keeps updating) a release PR from the conventional commits
-      # on master. Merging that PR tags the release and triggers publish.
+      # on main. Merging that PR tags the release and triggers publish.
       - uses: googleapis/release-please-action@v4
         id: release
         with:

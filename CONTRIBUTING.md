@@ -48,7 +48,7 @@ A `!` after the type — or a `BREAKING CHANGE:` footer — marks a breaking cha
 
 ## Releases
 
-[release-please](https://github.com/googleapis/release-please) watches `master`
+[release-please](https://github.com/googleapis/release-please) watches `main`
 and keeps a release pull request up to date with the pending changelog and the
 next version. Merging that pull request tags the release, and the tag triggers
 `npm publish`.
