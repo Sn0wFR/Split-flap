@@ -1,0 +1,225 @@
+/*!
+ * @sn0wfr/split-flap — stylesheet
+ * Every visual aspect is driven by custom properties, so a theme is just a
+ * handful of variable overrides. Nothing here is `!important`.
+ */
+
+.sf {
+  /* --- geometry ------------------------------------------------------- */
+  --sf-size: 3rem;
+  --sf-flap-width: 0.76em;
+  --sf-flap-height: 1.18em;
+  --sf-gap: 0.07em;
+  --sf-radius: 0.07em;
+  --sf-perspective: 6em;
+  --sf-char-offset: 0em;
+
+  /* --- colours -------------------------------------------------------- */
+  --sf-color: #f2f2f4;
+  --sf-bg: #191a1f;
+  --sf-bg-top: var(--sf-bg);
+  --sf-bg-bottom: #141519;
+  --sf-divider: rgba(0, 0, 0, 0.6);
+  --sf-divider-size: 0.02em;
+  --sf-border: 0 0 0 0.01em rgba(255, 255, 255, 0.05) inset;
+  --sf-shadow: 0 0.03em 0.09em rgba(0, 0, 0, 0.45);
+  --sf-shade: #000;
+  --sf-shade-max: 0.5;
+
+  /* --- typography ----------------------------------------------------- */
+  --sf-font:
+    ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", Menlo, Consolas,
+    monospace;
+  --sf-weight: 600;
+  --sf-tracking: 0;
+
+  font-size: var(--sf-size);
+  font-family: var(--sf-font);
+  font-weight: var(--sf-weight);
+  letter-spacing: var(--sf-tracking);
+  line-height: 1;
+  display: inline-block;
+  color: var(--sf-color);
+  /* Glyph halves must not be selectable or the copy buffer doubles them. */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.sf__track {
+  display: flex;
+  gap: var(--sf-gap);
+  align-items: stretch;
+}
+
+/* --------------------------------------------------------------------- */
+/* Flap                                                                    */
+/* --------------------------------------------------------------------- */
+
+.sf__flap {
+  position: relative;
+  display: block;
+  flex: 0 0 auto;
+  width: var(--sf-flap-width);
+  height: var(--sf-flap-height);
+  /* Perspective lives on the parent of the rotating leaves. */
+  perspective: var(--sf-perspective);
+  border-radius: var(--sf-radius);
+  box-shadow: var(--sf-shadow);
+}
+
+/* The hairline where the two halves meet. Drawn above the static panels but
+   below the leaves so a falling leaf covers it. */
+.sf__flap::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 calc(50% - (var(--sf-divider-size) / 2)) 0;
+  height: var(--sf-divider-size);
+  background: var(--sf-divider);
+  z-index: 3;
+  pointer-events: none;
+}
+
+.sf__panel,
+.sf__leaf {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 50%;
+  overflow: hidden;
+  box-shadow: var(--sf-border);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.sf__panel--top,
+.sf__leaf--front {
+  top: 0;
+  background: var(--sf-bg-top);
+  border-radius: var(--sf-radius) var(--sf-radius) 0 0;
+}
+
+.sf__panel--bottom,
+.sf__leaf--back {
+  bottom: 0;
+  background: var(--sf-bg-bottom);
+  border-radius: 0 0 var(--sf-radius) var(--sf-radius);
+}
+
+.sf__leaf {
+  z-index: 2;
+  /* Hidden until a flip needs them; the JS toggles visibility per step. */
+  visibility: hidden;
+}
+
+.sf__leaf--front {
+  transform-origin: 50% 100%;
+}
+
+.sf__leaf--back {
+  transform-origin: 50% 0%;
+  transform: rotateX(90deg);
+}
+
+/* --------------------------------------------------------------------- */
+/* Glyph                                                                   */
+/* --------------------------------------------------------------------- */
+
+/* A full-height line box clipped by its half-height parent: the top half
+   shows the upper part of the glyph, the bottom half the lower part. */
+.sf__char {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: var(--sf-flap-height);
+  line-height: var(--sf-flap-height);
+  text-align: center;
+  white-space: pre;
+  transform: translateY(var(--sf-char-offset));
+}
+
+.sf__panel--top .sf__char,
+.sf__leaf--front .sf__char {
+  top: 0;
+}
+
+.sf__panel--bottom .sf__char,
+.sf__leaf--back .sf__char {
+  bottom: 0;
+}
+
+/* Shading overlay: a leaf darkens as it rotates away from the light. */
+.sf__shade {
+  position: absolute;
+  inset: 0;
+  background: var(--sf-shade);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* --------------------------------------------------------------------- */
+/* States                                                                  */
+/* --------------------------------------------------------------------- */
+
+.sf.is-flipping {
+  cursor: default;
+}
+
+.sf__flap.is-flipping .sf__leaf {
+  visibility: visible;
+}
+
+/* Safety net: if JS animation is skipped for reduced motion the leaves must
+   never sit frozen mid-rotation over the panels. */
+@media (prefers-reduced-motion: reduce) {
+  .sf--respect-motion .sf__leaf {
+    display: none;
+  }
+}
+
+/* --------------------------------------------------------------------- */
+/* Themes                                                                  */
+/* --------------------------------------------------------------------- */
+
+/* Solari-style board: the default, listed for completeness. */
+.sf--airport {
+  --sf-color: #f2f2f4;
+  --sf-bg-top: #1b1c22;
+  --sf-bg-bottom: #141519;
+}
+
+.sf--amber {
+  --sf-color: #ffb44a;
+  --sf-bg-top: #221a0e;
+  --sf-bg-bottom: #1a1409;
+  --sf-divider: rgba(0, 0, 0, 0.75);
+  --sf-border: 0 0 0 0.01em rgba(255, 180, 74, 0.12) inset;
+}
+
+.sf--vintage {
+  --sf-color: #24211c;
+  --sf-bg-top: #f0e9d8;
+  --sf-bg-bottom: #e2dac6;
+  --sf-divider: rgba(90, 80, 60, 0.45);
+  --sf-border: 0 0 0 0.01em rgba(0, 0, 0, 0.08) inset;
+  --sf-shade: #6b5f45;
+  --sf-shade-max: 0.35;
+}
+
+.sf--terminal {
+  --sf-color: #6bf29a;
+  --sf-bg-top: #0d1712;
+  --sf-bg-bottom: #0a120e;
+  --sf-divider: rgba(0, 0, 0, 0.8);
+  --sf-border: 0 0 0 0.01em rgba(107, 242, 154, 0.14) inset;
+}
+
+.sf--paper {
+  --sf-color: #1a1a1a;
+  --sf-bg-top: #ffffff;
+  --sf-bg-bottom: #f1f1ef;
+  --sf-divider: rgba(0, 0, 0, 0.18);
+  --sf-border: 0 0 0 0.01em rgba(0, 0, 0, 0.07) inset;
+  --sf-shadow: 0 0.02em 0.06em rgba(0, 0, 0, 0.16);
+  --sf-shade: #7a7a7a;
+  --sf-shade-max: 0.3;
+}

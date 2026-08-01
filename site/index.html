@@ -1,0 +1,560 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>split-flap — affichage mécanique pour le web</title>
+    <meta
+      name="description"
+      data-i18n="meta.description"
+      content="Une librairie sans dépendance qui affiche du texte comme un tableau de départs d'aéroport. Vanilla, Web Component et React."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%2317181d'/%3E%3Ctext x='16' y='23' font-family='monospace' font-size='20' font-weight='700' fill='%23f2f2f4' text-anchor='middle'%3EF%3C/text%3E%3Crect x='2' y='15.4' width='28' height='1.2' fill='%23000'/%3E%3C/svg%3E"
+    />
+    <script type="module" src="/src/main.ts"></script>
+  </head>
+
+  <body>
+    <a class="skip-link" href="#main" data-i18n="a11y.skip">Aller au contenu</a>
+
+    <header class="topbar">
+      <div class="shell topbar__inner">
+        <a class="brand" href="#top">
+          <span class="brand__mark" aria-hidden="true"></span>
+          <span class="brand__name">split-flap</span>
+        </a>
+
+        <nav class="topnav" aria-label="Sections">
+          <a href="#quickstart" data-i18n="nav.start">Démarrer</a>
+          <a href="#playground" data-i18n="nav.playground">Bac à sable</a>
+          <a href="#board" data-i18n="nav.demo">Démo</a>
+          <a href="#themes" data-i18n="nav.themes">Thèmes</a>
+          <a href="#api" data-i18n="nav.api">API</a>
+        </nav>
+
+        <div class="topbar__actions">
+          <div class="langswitch" role="group" aria-label="Language">
+            <button type="button" data-lang="fr" class="is-active">FR</button>
+            <button type="button" data-lang="en">EN</button>
+          </div>
+          <a
+            class="ghost-btn"
+            href="https://github.com/Sn0wFR/Split-flap"
+            rel="noreferrer noopener"
+            target="_blank"
+            >GitHub</a
+          >
+        </div>
+      </div>
+    </header>
+
+    <main id="main">
+      <!-- ============================== HERO ============================ -->
+      <section class="hero" id="top">
+        <div class="shell hero__inner">
+          <p class="eyebrow" data-i18n="hero.eyebrow">
+            Zéro dépendance · ~6,5 ko gzip · MIT
+          </p>
+
+          <h1 class="hero__title">
+            <span class="sr-only" data-i18n="hero.title">
+              Affichez du texte comme un tableau de départs
+            </span>
+            <span id="hero-board" aria-hidden="true"></span>
+          </h1>
+
+          <p class="hero__lede" data-i18n="hero.lede">
+            Une librairie qui rend n'importe quelle chaîne de caractères comme
+            un panneau Solari : chaque volet tourne glyphe par glyphe jusqu'à sa
+            cible, exactement comme la mécanique d'origine.
+          </p>
+
+          <div class="hero__actions">
+            <a class="btn btn--primary" href="#quickstart" data-i18n="hero.cta"
+              >Commencer</a
+            >
+            <a class="btn" href="#playground" data-i18n="hero.play"
+              >Essayer en direct</a
+            >
+          </div>
+
+          <div class="install">
+            <code id="install-cmd">npm install @sn0wfr/split-flap</code>
+            <button
+              type="button"
+              class="copy"
+              data-copy="#install-cmd"
+              data-i18n-title="common.copy"
+              title="Copier"
+            >
+              <span data-i18n="common.copy">Copier</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================ FEATURES ========================== -->
+      <section class="section" id="features">
+        <div class="shell">
+          <h2 class="section__title" data-i18n="features.title">
+            Ce que ça fait bien
+          </h2>
+
+          <ul class="cards" role="list">
+            <li class="card">
+              <h3 data-i18n="features.mech.t">Mécanique fidèle</h3>
+              <p data-i18n="features.mech.d">
+                Les volets n'avancent que vers l'avant, glyphe par glyphe, en
+                repassant par le blanc — comme un vrai tableau.
+              </p>
+            </li>
+            <li class="card">
+              <h3 data-i18n="features.dep.t">Aucune dépendance</h3>
+              <p data-i18n="features.dep.d">
+                Rien à installer d'autre. Le CSS est embarqué dans le bundle et
+                injecté au premier usage.
+              </p>
+            </li>
+            <li class="card">
+              <h3 data-i18n="features.any.t">Partout</h3>
+              <p data-i18n-html="features.any.d">
+                Un cœur vanilla, un custom element
+                <code>&lt;split-flap&gt;</code> natif, et un wrapper React. Vue,
+                Svelte et Angular passent par l'élément.
+              </p>
+            </li>
+            <li class="card">
+              <h3 data-i18n="features.a11y.t">Accessible</h3>
+              <p data-i18n-html="features.a11y.d">
+                Le texte reste lisible par un lecteur d'écran, les volets sont
+                masqués, et <code>prefers-reduced-motion</code> coupe
+                l'animation.
+              </p>
+            </li>
+            <li class="card">
+              <h3 data-i18n="features.theme.t">Thémable</h3>
+              <p data-i18n="features.theme.d">
+                Tout passe par des variables CSS. Un thème, c'est cinq lignes de
+                surcharge — pas un fork.
+              </p>
+            </li>
+            <li class="card">
+              <h3 data-i18n="features.ts.t">TypeScript</h3>
+              <p data-i18n-html="features.ts.d">
+                Types fournis, ESM et CJS, plus un build IIFE pour un simple
+                <code>&lt;script&gt;</code> depuis un CDN.
+              </p>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- =========================== QUICKSTART ========================= -->
+      <section class="section section--alt" id="quickstart">
+        <div class="shell">
+          <h2 class="section__title" data-i18n="start.title">Démarrer</h2>
+          <p class="section__lede" data-i18n="start.lede">
+            Trois façons de l'utiliser, selon ce que vous avez sous la main.
+          </p>
+
+          <div class="tabs" data-tabs>
+            <div class="tabs__list" role="tablist" aria-label="Installation">
+              <button
+                role="tab"
+                aria-selected="true"
+                aria-controls="tab-html"
+                id="tabbtn-html"
+              >
+                HTML / CDN
+              </button>
+              <button
+                role="tab"
+                aria-selected="false"
+                aria-controls="tab-esm"
+                id="tabbtn-esm"
+                tabindex="-1"
+              >
+                JavaScript
+              </button>
+              <button
+                role="tab"
+                aria-selected="false"
+                aria-controls="tab-react"
+                id="tabbtn-react"
+                tabindex="-1"
+              >
+                React
+              </button>
+            </div>
+
+            <div
+              class="tabs__panel"
+              role="tabpanel"
+              id="tab-html"
+              aria-labelledby="tabbtn-html"
+            >
+              <p data-i18n-html="start.html">
+                Une balise script, et l'élément est disponible. Le texte entre
+                les balises sert de repli sans JavaScript.
+              </p>
+              <pre><code>&lt;script src="https://unpkg.com/@sn0wfr/split-flap"&gt;&lt;/script&gt;
+
+&lt;split-flap length="12" chars="letters" theme="airport"&gt;
+  DEPARTURES
+&lt;/split-flap&gt;</code></pre>
+            </div>
+
+            <div
+              class="tabs__panel"
+              role="tabpanel"
+              id="tab-esm"
+              aria-labelledby="tabbtn-esm"
+              hidden
+            >
+              <p data-i18n-html="start.esm">
+                Le cœur est une classe. <code>set()</code> renvoie une promesse
+                résolue quand tous les volets sont arrivés.
+              </p>
+              <pre><code>import { SplitFlap } from "@sn0wfr/split-flap";
+
+const board = new SplitFlap("#board", {
+  length: 12,
+  chars: "letters",
+  duration: 110,
+  stagger: 55,
+});
+
+await board.set("BOARDING");
+await board.set("GATE 24");</code></pre>
+            </div>
+
+            <div
+              class="tabs__panel"
+              role="tabpanel"
+              id="tab-react"
+              aria-labelledby="tabbtn-react"
+              hidden
+            >
+              <p data-i18n-html="start.react">
+                Le composant pilote l'instance : changer <code>value</code>
+                déclenche l'animation, changer une option reconfigure sur place.
+              </p>
+              <pre><code>import { SplitFlap } from "@sn0wfr/split-flap/react";
+
+export function Status({ state }) {
+  return &lt;SplitFlap value={state} length={12} theme="amber" /&gt;;
+}</code></pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- =========================== PLAYGROUND ========================= -->
+      <section class="section" id="playground">
+        <div class="shell">
+          <h2 class="section__title" data-i18n="play.title">Bac à sable</h2>
+          <p class="section__lede" data-i18n="play.lede">
+            Réglez, regardez, puis copiez le code correspondant.
+          </p>
+
+          <div class="play">
+            <div class="play__stage">
+              <div id="play-board"></div>
+              <div class="play__stage-actions">
+                <button type="button" class="btn btn--sm" id="play-replay">
+                  <span data-i18n="play.replay">Rejouer</span>
+                </button>
+                <button type="button" class="btn btn--sm" id="play-random">
+                  <span data-i18n="play.random">Aléatoire</span>
+                </button>
+              </div>
+            </div>
+
+            <form class="play__controls" id="play-form">
+              <label class="field field--wide">
+                <span data-i18n="play.text">Texte</span>
+                <input type="text" id="c-value" value="DEPARTURES" />
+              </label>
+
+              <label class="field">
+                <span data-i18n="play.theme">Thème</span>
+                <select id="c-theme">
+                  <option value="airport">airport</option>
+                  <option value="amber">amber</option>
+                  <option value="vintage">vintage</option>
+                  <option value="terminal">terminal</option>
+                  <option value="paper">paper</option>
+                </select>
+              </label>
+
+              <label class="field">
+                <span data-i18n="play.chars">Alphabet</span>
+                <select id="c-chars">
+                  <option value="alphanumeric">alphanumeric</option>
+                  <option value="letters">letters</option>
+                  <option value="digits">digits</option>
+                  <option value="full">full</option>
+                  <option value="hex">hex</option>
+                </select>
+              </label>
+
+              <label class="field">
+                <span data-i18n="play.align">Alignement</span>
+                <select id="c-align">
+                  <option value="left">left</option>
+                  <option value="center">center</option>
+                  <option value="right">right</option>
+                </select>
+              </label>
+
+              <label class="field">
+                <span
+                  ><span data-i18n="play.length">Volets</span>
+                  <output for="c-length" id="o-length">12</output></span
+                >
+                <input type="range" id="c-length" min="1" max="20" value="12" />
+              </label>
+
+              <label class="field">
+                <span
+                  ><span data-i18n="play.duration">Durée / cran</span>
+                  <output for="c-duration" id="o-duration">110 ms</output></span
+                >
+                <input
+                  type="range"
+                  id="c-duration"
+                  min="30"
+                  max="300"
+                  step="10"
+                  value="110"
+                />
+              </label>
+
+              <label class="field">
+                <span
+                  ><span data-i18n="play.stagger">Décalage</span>
+                  <output for="c-stagger" id="o-stagger">55 ms</output></span
+                >
+                <input
+                  type="range"
+                  id="c-stagger"
+                  min="0"
+                  max="200"
+                  step="5"
+                  value="55"
+                />
+              </label>
+
+              <label class="field">
+                <span
+                  ><span data-i18n="play.jitter">Irrégularité</span>
+                  <output for="c-jitter" id="o-jitter">0.18</output></span
+                >
+                <input
+                  type="range"
+                  id="c-jitter"
+                  min="0"
+                  max="0.6"
+                  step="0.02"
+                  value="0.18"
+                />
+              </label>
+
+              <label class="field">
+                <span
+                  ><span data-i18n="play.minsteps">Crans minimum</span>
+                  <output for="c-minsteps" id="o-minsteps">1</output></span
+                >
+                <input
+                  type="range"
+                  id="c-minsteps"
+                  min="1"
+                  max="20"
+                  value="1"
+                />
+              </label>
+
+              <label class="field">
+                <span
+                  ><span data-i18n="play.size">Taille</span>
+                  <output for="c-size" id="o-size">3 rem</output></span
+                >
+                <input
+                  type="range"
+                  id="c-size"
+                  min="1.2"
+                  max="5"
+                  step="0.1"
+                  value="3"
+                />
+              </label>
+
+              <label class="field field--check">
+                <input type="checkbox" id="c-sound" />
+                <span data-i18n="play.sound">Son mécanique</span>
+              </label>
+            </form>
+          </div>
+
+          <div class="codeout">
+            <div class="codeout__bar">
+              <span data-i18n="play.code">Code correspondant</span>
+              <button type="button" class="copy" data-copy="#play-code">
+                <span data-i18n="common.copy">Copier</span>
+              </button>
+            </div>
+            <pre><code id="play-code"></code></pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================ BOARD DEMO ======================== -->
+      <section class="section section--alt" id="board">
+        <div class="shell">
+          <h2 class="section__title" data-i18n="demo.title">
+            Un vrai tableau de départs
+          </h2>
+          <p class="section__lede" data-i18n="demo.lede">
+            Plusieurs instances côte à côte, rafraîchies comme le ferait un
+            aéroport. Chaque colonne a son propre alphabet et son propre rythme.
+          </p>
+
+          <!-- Header and rows share one grid so the columns line up. -->
+          <div class="board">
+            <div class="board__grid" id="board-grid">
+              <span class="board__th" data-i18n="demo.time">HEURE</span>
+              <span class="board__th" data-i18n="demo.flight">VOL</span>
+              <span class="board__th" data-i18n="demo.dest">DESTINATION</span>
+              <span class="board__th" data-i18n="demo.gate">PTE</span>
+              <span class="board__th" data-i18n="demo.status">STATUT</span>
+            </div>
+          </div>
+
+          <div class="board__actions">
+            <button type="button" class="btn btn--sm" id="board-shuffle">
+              <span data-i18n="demo.refresh">Rafraîchir le tableau</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================= THEMES =========================== -->
+      <section class="section" id="themes">
+        <div class="shell">
+          <h2 class="section__title" data-i18n="themes.title">Thèmes</h2>
+          <p class="section__lede" data-i18n="themes.lede">
+            Cinq thèmes fournis. Chacun n'est qu'un jeu de variables CSS — le
+            vôtre tient dans un bloc.
+          </p>
+
+          <div class="themegrid" id="themegrid"></div>
+
+          <div class="codeout">
+            <div class="codeout__bar">
+              <span data-i18n="themes.custom">Votre propre thème</span>
+              <button type="button" class="copy" data-copy="#theme-code">
+                <span data-i18n="common.copy">Copier</span>
+              </button>
+            </div>
+            <pre><code id="theme-code">.sf--midnight {
+  --sf-color: #cfe3ff;
+  --sf-bg-top: #10203a;
+  --sf-bg-bottom: #0a1729;
+  --sf-divider: rgba(0, 0, 0, 0.7);
+  --sf-radius: 0.12em;
+}</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- =============================== API ============================ -->
+      <section class="section section--alt" id="api">
+        <div class="shell">
+          <h2 class="section__title" data-i18n="api.title">Référence</h2>
+
+          <h3 class="sub" data-i18n="api.options">Options</h3>
+          <div class="tablewrap">
+            <table class="ref">
+              <thead>
+                <tr>
+                  <th data-i18n="api.name">Nom</th>
+                  <th data-i18n="api.type">Type</th>
+                  <th data-i18n="api.default">Défaut</th>
+                  <th data-i18n="api.desc">Description</th>
+                </tr>
+              </thead>
+              <tbody id="api-options"></tbody>
+            </table>
+          </div>
+
+          <h3 class="sub" data-i18n="api.methods">Méthodes et propriétés</h3>
+          <div class="tablewrap">
+            <table class="ref">
+              <thead>
+                <tr>
+                  <th data-i18n="api.name">Nom</th>
+                  <th data-i18n="api.type">Type</th>
+                  <th data-i18n="api.desc">Description</th>
+                </tr>
+              </thead>
+              <tbody id="api-methods"></tbody>
+            </table>
+          </div>
+
+          <h3 class="sub" data-i18n="api.events">Événements</h3>
+          <div class="tablewrap">
+            <table class="ref">
+              <thead>
+                <tr>
+                  <th data-i18n="api.name">Nom</th>
+                  <th data-i18n="api.type">Detail</th>
+                  <th data-i18n="api.desc">Description</th>
+                </tr>
+              </thead>
+              <tbody id="api-events"></tbody>
+            </table>
+          </div>
+
+          <h3 class="sub" data-i18n="api.vars">Variables CSS</h3>
+          <div class="tablewrap">
+            <table class="ref">
+              <thead>
+                <tr>
+                  <th data-i18n="api.name">Nom</th>
+                  <th data-i18n="api.default">Défaut</th>
+                  <th data-i18n="api.desc">Description</th>
+                </tr>
+              </thead>
+              <tbody id="api-vars"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="shell footer__inner">
+        <p>
+          <strong>@sn0wfr/split-flap</strong> —
+          <span data-i18n="footer.license">licence MIT</span>
+        </p>
+        <nav aria-label="Liens">
+          <a
+            href="https://github.com/Sn0wFR/Split-flap"
+            rel="noreferrer noopener"
+            target="_blank"
+            >GitHub</a
+          >
+          <a
+            href="https://www.npmjs.com/package/@sn0wfr/split-flap"
+            rel="noreferrer noopener"
+            target="_blank"
+            >npm</a
+          >
+        </nav>
+      </div>
+    </footer>
+  </body>
+</html>

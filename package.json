@@ -1,0 +1,107 @@
+{
+  "name": "@sn0wfr/split-flap",
+  "version": "0.0.0",
+  "description": "Zero-dependency split-flap (airport departure board) text display for the web. Vanilla core + native <split-flap> custom element + optional React wrapper.",
+  "keywords": [
+    "split-flap",
+    "splitflap",
+    "flip",
+    "flipboard",
+    "departure-board",
+    "solari",
+    "airport",
+    "animation",
+    "text-effect",
+    "web-component",
+    "custom-element",
+    "react"
+  ],
+  "license": "MIT",
+  "author": "Sn0wFR",
+  "homepage": "https://sn0wfr.github.io/Split-flap/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Sn0wFR/Split-flap.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Sn0wFR/Split-flap/issues"
+  },
+  "type": "module",
+  "sideEffects": [
+    "**/*.css",
+    "./dist/element.js",
+    "./dist/element.cjs"
+  ],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "unpkg": "./dist/split-flap.global.js",
+  "jsdelivr": "./dist/split-flap.global.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./element": {
+      "types": "./dist/element.d.ts",
+      "import": "./dist/element.js",
+      "require": "./dist/element.cjs"
+    },
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "import": "./dist/react.js",
+      "require": "./dist/react.cjs"
+    },
+    "./style.css": "./dist/split-flap.css",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "README.fr.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "site:dev": "vite --config site/vite.config.ts",
+    "site:build": "npm run build && vite build --config site/vite.config.ts",
+    "site:preview": "vite preview --config site/vite.config.ts",
+    "prepublishOnly": "npm run build",
+    "prepare": "husky"
+  },
+  "peerDependencies": {
+    "react": ">=17"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.6.1",
+    "@commitlint/config-conventional": "^19.6.0",
+    "@types/react": "^19.0.7",
+    "happy-dom": "^16.6.0",
+    "husky": "^9.1.7",
+    "prettier": "^3.4.2",
+    "react": "^19.0.0",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.3",
+    "vite": "^6.0.7",
+    "vitest": "^2.1.8"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

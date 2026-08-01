@@ -1,0 +1,59 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    outputs:
+      released: ${{ steps.release.outputs.release_created }}
+      tag: ${{ steps.release.outputs.tag_name }}
+    steps:
+      # Opens (and keeps updating) a release PR from the conventional commits
+      # on main. Merging that PR tags the release and triggers publish.
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  publish:
+    name: Publish to npm
+    needs: release-please
+    if: needs.release-please.outputs.released == 'true'
+    runs-on: ubuntu-latest
+    # NPM_TOKEN lives in this environment rather than in the repository
+    # secrets, so its deployment-branch rule can keep the token unreadable
+    # from anywhere but main. The name must match Settings -> Environments
+    # exactly, or the job waits on an environment that does not exist.
+    environment: npm
+    permissions:
+      contents: read
+      # Required for npm provenance attestations.
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release-please.outputs.tag }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          registry-url: https://registry.npmjs.org
+
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+
+      # NPM_TOKEN: a granular access token limited to @sn0wfr/split-flap,
+      # stored as a secret on the `npm` environment.
+      - run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
