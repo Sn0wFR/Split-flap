@@ -237,10 +237,6 @@ export class SplitFlap {
       return Promise.resolve();
     }
 
-    if (this.opts.sound && !this.clicker) {
-      this.clicker = createClicker(this.opts.volume);
-    }
-
     // Read the shading depth once per run: querying it per step would force
     // a style recalculation on every flap, every frame.
     this.shade = this.readShadeMax();
@@ -523,7 +519,7 @@ export class SplitFlap {
     flap.remaining -= 1;
     const final = flap.remaining === 0;
 
-    this.clicker?.tick();
+    this.clicks()?.tick();
     this.emit("flip", { index, char: next, final });
 
     flap.timer = setTimeout(() => {
@@ -571,6 +567,19 @@ export class SplitFlap {
         fill: "both",
       }),
     ];
+  }
+
+  /**
+   * The clicker, built the first time a flip actually needs it.
+   *
+   * Creating it here rather than when a value is set is what lets sound
+   * switched on mid-flight be heard for the rest of that flip: `setOptions`
+   * closes the clicker when sound goes off, and nothing would rebuild it
+   * until the next `set()`.
+   */
+  private clicks(): Clicker | null {
+    if (!this.opts.sound) return null;
+    return (this.clicker ??= createClicker(this.opts.volume));
   }
 
   private jittered(base: number): number {

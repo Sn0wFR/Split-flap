@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { stubAudio } from "./audio-stub.js";
 
 /**
  * The shared context and its reference count are module state, so each test
@@ -12,63 +13,6 @@ async function loadClicker() {
 beforeEach(() => {
   vi.resetModules();
 });
-
-/** Minimal AudioContext good enough to count constructions and closures. */
-function stubAudio() {
-  let built = 0;
-  const closed: string[] = [];
-
-  class FakeAudioContext {
-    static get built() {
-      return built;
-    }
-    readonly id: string;
-    state = "running";
-    currentTime = 0;
-    destination = {};
-
-    constructor() {
-      built += 1;
-      this.id = `ctx-${built}`;
-    }
-    createBuffer(_channels: number, length: number) {
-      return { getChannelData: () => new Float32Array(length) };
-    }
-    createBufferSource() {
-      return {
-        buffer: null,
-        playbackRate: { value: 1 },
-        connect: (next: unknown) => next,
-        start() {},
-        stop() {},
-      };
-    }
-    createBiquadFilter() {
-      return {
-        type: "",
-        frequency: { value: 0 },
-        Q: { value: 0 },
-        connect: (next: unknown) => next,
-      };
-    }
-    createGain() {
-      return {
-        gain: { setValueAtTime() {}, exponentialRampToValueAtTime() {} },
-        connect: (next: unknown) => next,
-      };
-    }
-    resume() {
-      return Promise.resolve();
-    }
-    close() {
-      closed.push(this.id);
-      return Promise.resolve();
-    }
-  }
-
-  vi.stubGlobal("window", { AudioContext: FakeAudioContext });
-  return { count: () => built, closed };
-}
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -84,7 +28,7 @@ describe("createClicker", () => {
     const clickers = Array.from({ length: 30 }, () => createClicker(0.1));
     for (const clicker of clickers) clicker.tick();
 
-    expect(audio.count()).toBe(1);
+    expect(audio.contexts()).toBe(1);
   });
 
   it("creates the context lazily, on the first tick", async () => {
@@ -92,7 +36,7 @@ describe("createClicker", () => {
     const createClicker = await loadClicker();
 
     createClicker();
-    expect(audio.count()).toBe(0);
+    expect(audio.contexts()).toBe(0);
   });
 
   it("keeps the context alive while another clicker still holds it", async () => {
@@ -137,7 +81,7 @@ describe("createClicker", () => {
     const second = createClicker();
     second.tick();
 
-    expect(audio.count()).toBe(2);
+    expect(audio.contexts()).toBe(2);
   });
 
   it("degrades to silence where the Web Audio API is missing", async () => {
