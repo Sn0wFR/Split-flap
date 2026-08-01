@@ -49,12 +49,45 @@ let shared: AudioContext | null = null;
 let noise: AudioBuffer | null = null;
 let users = 0;
 
+/** Gestures a browser accepts as permission to start playing audio. */
+const GESTURES = ["pointerdown", "keydown", "touchend"] as const;
+
+/**
+ * Resume the context on the page's first user gesture.
+ *
+ * A context built before any interaction starts suspended, and calling
+ * `resume()` from outside a gesture does not lift that. Without this, a
+ * display created with `sound: true` on a freshly loaded page stays mute
+ * until something else happens to build a context at the right moment.
+ */
+function unlockOnGesture(ctx: AudioContext): void {
+  if (typeof document === "undefined") return;
+
+  const unlock = () => {
+    for (const type of GESTURES) {
+      document.removeEventListener(type, unlock, true);
+    }
+    try {
+      void ctx.resume();
+    } catch {
+      /* context already gone */
+    }
+  };
+
+  // Capture phase, so a handler that stops propagation cannot hide the
+  // gesture from us.
+  for (const type of GESTURES) {
+    document.addEventListener(type, unlock, true);
+  }
+}
+
 function acquire(): AudioContext | null {
   const Ctor = getAudioContextCtor();
   if (!Ctor) return null;
   if (!shared) {
     shared = new Ctor();
     noise = makeNoiseBuffer(shared);
+    unlockOnGesture(shared);
   }
   return shared;
 }
