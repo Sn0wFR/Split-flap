@@ -69,7 +69,7 @@ function applyLang(next: Lang): void {
   }
 
   renderApiTables();
-  refreshBoard();
+  retranslateBoard();
   // The switch owns its own label, which is state-dependent rather than a
   // fixed string, so it cannot be handled by the data-i18n sweep above.
   applySound();
@@ -316,6 +316,11 @@ interface BoardRow {
   dest: SplitFlap;
   gate: SplitFlap;
   status: SplitFlap;
+  /**
+   * Index into `statuses[lang]`. Keeping it lets a language switch re-label
+   * the column without inventing a different departure.
+   */
+  statusIndex: number;
 }
 
 const boardRows: BoardRow[] = [];
@@ -378,10 +383,13 @@ function buildBoard(): void {
         length: 11,
         chars: "letters",
       }),
+      statusIndex: 0,
     });
   }
 
-  for (const row of boardRows) ambient.push(...Object.values(row));
+  for (const row of boardRows) {
+    ambient.push(row.time, row.flight, row.dest, row.gate, row.status);
+  }
 }
 
 /** Fill every row with a fresh, plausible departure. */
@@ -401,11 +409,31 @@ function refreshBoard(): void {
     void row.gate.set(
       `${pick(GATE_LETTERS)}${1 + Math.floor(Math.random() * 30)}`,
     );
-    void row.status.set(pick(statuses[lang]));
+
+    row.statusIndex = Math.floor(Math.random() * statuses[lang].length);
+    void row.status.set(statuses[lang][row.statusIndex] ?? "");
   });
 }
 
+/**
+ * Re-label the status column after a language switch.
+ *
+ * The departures themselves have not changed, so the board keeps its
+ * flights instead of being reshuffled, and the new wording snaps into
+ * place rather than flipping — a translation is not a board update, and
+ * it should not clatter.
+ */
+function retranslateBoard(): void {
+  for (const row of boardRows) {
+    const label = statuses[lang][row.statusIndex];
+    if (label) void row.status.set(label, { immediate: true });
+  }
+}
+
 buildBoard();
+// Fill the board once at boot; from then on only the shuffle button and
+// the language switch touch it, and they mean different things.
+refreshBoard();
 
 document
   .querySelector("#board-shuffle")
