@@ -96,13 +96,21 @@ if (heroHost) {
     size: "clamp(1.5rem, 6.2vw, 4rem)",
   });
 
+  /** How long a settled headline stays readable before the next one. */
+  const HERO_REST = 3800;
+
   let cursor = 0;
-  const cycle = () => {
+  // The pause is measured from the settle, not from the start of the flip.
+  // A fixed interval would spend most of itself on the animation — and a
+  // long headline travels further than a short one, so the time actually
+  // left to read would change from phrase to phrase.
+  const cycle = async () => {
     const phrases = heroPhrases[lang];
     cursor = (cursor + 1) % phrases.length;
-    void hero.set(phrases[cursor] ?? "SPLIT FLAP");
+    await hero.set(phrases[cursor] ?? "SPLIT FLAP");
+    window.setTimeout(() => void cycle(), HERO_REST);
   };
-  setInterval(cycle, 4200);
+  window.setTimeout(() => void cycle(), HERO_REST);
 }
 
 /* ===================================================================== */
