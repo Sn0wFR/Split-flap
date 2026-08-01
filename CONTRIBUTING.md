@@ -56,6 +56,10 @@ next version. Merging that pull request tags the release, and the tag triggers
 Nothing about the version is edited by hand: `package.json`, `CHANGELOG.md` and
 `.release-please-manifest.json` are all maintained by the action.
 
+Publishing reads `NPM_TOKEN` from the `npm` environment rather than from the
+repository secrets, so the token is restricted to `main` by that environment's
+deployment-branch rule and cannot be read from a pull request branch.
+
 While the package is below `1.0.0`, a `feat` bumps the minor and everything else
 bumps the patch, breaking changes included.
 

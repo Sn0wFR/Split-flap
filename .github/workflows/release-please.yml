@@ -28,6 +28,11 @@ jobs:
     needs: release-please
     if: needs.release-please.outputs.released == 'true'
     runs-on: ubuntu-latest
+    # NPM_TOKEN lives in this environment rather than in the repository
+    # secrets, so its deployment-branch rule can keep the token unreadable
+    # from anywhere but main. The name must match Settings -> Environments
+    # exactly, or the job waits on an environment that does not exist.
+    environment: npm
     permissions:
       contents: read
       # Required for npm provenance attestations.
@@ -47,7 +52,8 @@ jobs:
       - run: npm test
       - run: npm run build
 
-      # Requires an NPM_TOKEN secret with publish rights on the @sn0wfr scope.
+      # NPM_TOKEN: a granular access token limited to @sn0wfr/split-flap,
+      # stored as a secret on the `npm` environment.
       - run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
