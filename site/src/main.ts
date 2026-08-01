@@ -1,4 +1,5 @@
-import { SplitFlap, alphabets } from "../../src/index.js";
+import { SplitFlap, alphabets, createClicker } from "../../src/index.js";
+import type { Clicker } from "../../src/index.js";
 import {
   airlines,
   apiEvents,
@@ -69,6 +70,9 @@ function applyLang(next: Lang): void {
 
   renderApiTables();
   refreshBoard();
+  // The switch owns its own label, which is state-dependent rather than a
+  // fixed string, so it cannot be handled by the data-i18n sweep above.
+  applySound();
 }
 
 for (const button of document.querySelectorAll<HTMLButtonElement>(
@@ -78,6 +82,49 @@ for (const button of document.querySelectorAll<HTMLButtonElement>(
     applyLang(button.dataset.lang as Lang),
   );
 }
+
+/* ===================================================================== */
+/* Sound                                                                 */
+/* ===================================================================== */
+
+const SOUND_KEY = "split-flap-site-sound";
+
+/**
+ * Boards that follow the header switch. Sound stays off until it is asked
+ * for: a page that clatters at a visitor unprompted is obnoxious, and
+ * browsers block audio before a gesture anyway, so it would not even work.
+ */
+const ambient: SplitFlap[] = [];
+
+let soundOn = localStorage.getItem(SOUND_KEY) === "on";
+
+/** Lets the playground react without exporting its internals. */
+let syncPlaygroundSound: (() => void) | null = null;
+
+const soundButton = document.querySelector<HTMLButtonElement>("#sound-toggle");
+
+/** A clicker of our own, purely to answer the toggle itself. */
+let feedback: Clicker | null = null;
+
+function applySound(): void {
+  for (const display of ambient) display.setOptions({ sound: soundOn });
+  syncPlaygroundSound?.();
+
+  soundButton?.setAttribute("aria-pressed", String(soundOn));
+  const dict = dictionaries[lang];
+  const label = dict[soundOn ? "sound.on" : "sound.off"];
+  if (soundButton && label) soundButton.title = label;
+}
+
+soundButton?.addEventListener("click", () => {
+  soundOn = !soundOn;
+  localStorage.setItem(SOUND_KEY, soundOn ? "on" : "off");
+  applySound();
+
+  // Click once from inside the gesture: that is what lifts the browser's
+  // autoplay block, and it answers the button without waiting for a flip.
+  if (soundOn) (feedback ??= createClicker(0.3)).tick();
+});
 
 /* ===================================================================== */
 /* Hero                                                                  */
@@ -94,7 +141,9 @@ if (heroHost) {
     stagger: 45,
     minSteps: 3,
     size: "clamp(1.5rem, 6.2vw, 4rem)",
+    volume: 0.22,
   });
+  ambient.push(hero);
 
   /** How long a settled headline stays readable before the next one. */
   const HERO_REST = 3800;
@@ -178,7 +227,15 @@ if (playHost) {
   const board = new SplitFlap(playHost, {
     ...state,
     size: `${state.size}rem`,
+    sound: soundOn && state.sound,
   });
+
+  // The header switch can only silence the playground; its own checkbox
+  // still decides whether `sound: true` belongs in the generated call.
+  syncPlaygroundSound = () => {
+    inputs.sound.disabled = !soundOn;
+    board.setOptions({ sound: soundOn && inputs.sound.checked });
+  };
 
   const codeOut = $("#play-code");
 
@@ -225,7 +282,7 @@ if (playHost) {
       jitter: s.jitter,
       minSteps: s.minSteps,
       size: `${s.size}rem`,
-      sound: s.sound,
+      sound: soundOn && s.sound,
     });
     void board.set(s.value);
     syncOutputs(s);
@@ -289,6 +346,9 @@ function buildBoard(): void {
       // Rows lower down start later, the way a real board cascades.
       minSteps: 2,
       size: "clamp(0.8rem, 2.1vw, 1.35rem)",
+      // Thirty columns click at once here. Per-cell volume has to sit far
+      // below the hero's or the sum clips into noise.
+      volume: 0.05,
     } as const;
 
     boardRows.push({
@@ -320,6 +380,8 @@ function buildBoard(): void {
       }),
     });
   }
+
+  for (const row of boardRows) ambient.push(...Object.values(row));
 }
 
 /** Fill every row with a fresh, plausible departure. */
@@ -378,7 +440,9 @@ function buildThemes(): void {
       duration: 90,
       stagger: 40,
       size: "clamp(1.1rem, 3vw, 1.6rem)",
+      volume: 0.14,
     });
+    ambient.push(display);
 
     // Re-flip on hover so each theme can be seen in motion.
     card.addEventListener("mouseenter", () => {

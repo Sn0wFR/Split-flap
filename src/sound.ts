@@ -38,21 +38,54 @@ function makeNoiseBuffer(ctx: AudioContext): AudioBuffer {
   return buffer;
 }
 
-export function createClicker(volume = 0.25): Clicker {
-  const Ctor = getAudioContextCtor();
-  if (!Ctor) return NOOP_CLICKER;
+/*
+ * One AudioContext is shared by every clicker on the page.
+ *
+ * Browsers cap how many a document may hold — Chrome throws past a handful —
+ * and a departure board is naturally built from dozens of displays. Giving
+ * each its own context would exhaust that budget and silence the lot.
+ */
+let shared: AudioContext | null = null;
+let noise: AudioBuffer | null = null;
+let users = 0;
 
-  let ctx: AudioContext | null = null;
-  let noise: AudioBuffer | null = null;
+function acquire(): AudioContext | null {
+  const Ctor = getAudioContextCtor();
+  if (!Ctor) return null;
+  if (!shared) {
+    shared = new Ctor();
+    noise = makeNoiseBuffer(shared);
+  }
+  return shared;
+}
+
+/** Drop the shared context once the last clicker using it has closed. */
+function release(): void {
+  users = Math.max(0, users - 1);
+  if (users > 0 || !shared) return;
+  try {
+    void shared.close();
+  } catch {
+    /* already closed */
+  }
+  shared = null;
+  noise = null;
+}
+
+export function createClicker(volume = 0.25): Clicker {
+  if (!getAudioContextCtor()) return NOOP_CLICKER;
+
+  users += 1;
+  let closed = false;
   let gain = volume;
 
   return {
     tick() {
       try {
-        if (!ctx) {
-          ctx = new Ctor();
-          noise = makeNoiseBuffer(ctx);
-        }
+        if (closed) return;
+        const ctx = acquire();
+        if (!ctx) return;
+
         // Browsers hold the context suspended until a user gesture happens.
         if (ctx.state === "suspended") void ctx.resume();
         if (ctx.state !== "running" || !noise) return;
@@ -83,13 +116,11 @@ export function createClicker(volume = 0.25): Clicker {
       gain = Math.min(1, Math.max(0, next));
     },
     close() {
-      try {
-        void ctx?.close();
-      } catch {
-        /* already closed */
-      }
-      ctx = null;
-      noise = null;
+      // Idempotent: a double close must not release another clicker's claim
+      // on the shared context.
+      if (closed) return;
+      closed = true;
+      release();
     },
   };
 }

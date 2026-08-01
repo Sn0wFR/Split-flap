@@ -26,6 +26,11 @@ const fr: Dict = {
   "nav.themes": "Thèmes",
   "nav.api": "API",
 
+  "sound.label": "Son mécanique",
+  "sound.on": "Couper le son mécanique",
+  "sound.off": "Activer le son mécanique",
+  "sound.title": "Activer le son mécanique",
+
   "hero.eyebrow": "Zéro dépendance · ~6,5 ko gzip · MIT",
   "hero.title": "Affichez du texte comme un tableau de départs",
   "hero.lede":
@@ -122,6 +127,11 @@ const en: Dict = {
   "nav.demo": "Demo",
   "nav.themes": "Themes",
   "nav.api": "API",
+
+  "sound.label": "Mechanical sound",
+  "sound.on": "Mute the mechanical sound",
+  "sound.off": "Turn on the mechanical sound",
+  "sound.title": "Turn on the mechanical sound",
 
   "hero.eyebrow": "Zero dependencies · ~6.5 kB gzip · MIT",
   "hero.title": "Render text like a departure board",
