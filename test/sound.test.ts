@@ -84,6 +84,52 @@ describe("createClicker", () => {
     expect(audio.contexts()).toBe(2);
   });
 
+  it("stays quiet before a gesture, then unlocks on the first one", async () => {
+    // What a browser does on a freshly loaded page: the context exists but
+    // is suspended, and resuming it is refused until the visitor interacts.
+    const audio = stubAudio({ suspended: true });
+    const createClicker = await loadClicker();
+
+    const clicker = createClicker();
+    clicker.tick();
+    expect(audio.clicks()).toBe(0);
+    expect(audio.running()).toBe(false);
+
+    audio.allowResume();
+    document.dispatchEvent(new Event("pointerdown"));
+    await Promise.resolve();
+
+    // The gesture is what lifted it — no further tick was needed. This is
+    // the case a restored `sound: true` hits on a freshly loaded page.
+    expect(audio.running()).toBe(true);
+
+    clicker.tick();
+    expect(audio.clicks()).toBe(1);
+  });
+
+  it("stops listening for gestures once one has arrived", async () => {
+    const audio = stubAudio({ suspended: true });
+    const createClicker = await loadClicker();
+
+    const clicker = createClicker();
+    clicker.tick();
+    const beforeGesture = audio.resumes();
+
+    audio.allowResume();
+    document.dispatchEvent(new Event("pointerdown"));
+    await Promise.resolve();
+    const afterFirst = audio.resumes();
+
+    document.dispatchEvent(new Event("keydown"));
+    document.dispatchEvent(new Event("pointerdown"));
+    await Promise.resolve();
+
+    expect(afterFirst).toBe(beforeGesture + 1);
+    // The listener removed itself, so later gestures cost nothing.
+    expect(audio.resumes()).toBe(afterFirst);
+    expect(audio.contexts()).toBe(1);
+  });
+
   it("degrades to silence where the Web Audio API is missing", async () => {
     vi.stubGlobal("window", {});
     const createClicker = await loadClicker();

@@ -12,24 +12,46 @@ export interface AudioStub {
   contexts(): number;
   /** Number of clicks that reached the audio graph. */
   clicks(): number;
+  /** Number of times `resume()` was called, granted or not. */
+  resumes(): number;
+  /** Whether the most recent context is running rather than suspended. */
+  running(): boolean;
   /** Ids of contexts that were closed, in order. */
   closed: string[];
+  /**
+   * Start granting `resume()`, the way a browser does once the page has
+   * seen a user gesture. Before this, resuming is a no-op — which is the
+   * whole reason the unlock-on-gesture path exists.
+   */
+  allowResume(): void;
 }
 
-export function stubAudio(): AudioStub {
+export interface StubOptions {
+  /**
+   * Start contexts suspended, the way a browser does before the page has
+   * seen a user gesture. `resume()` then flips them to running.
+   */
+  suspended?: boolean;
+}
+
+export function stubAudio({ suspended = false }: StubOptions = {}): AudioStub {
   let built = 0;
   let started = 0;
+  let resumeCalls = 0;
+  let resumeAllowed = !suspended;
+  let latest: { state: string } | null = null;
   const closed: string[] = [];
 
   class FakeAudioContext {
     readonly id: string;
-    state = "running";
+    state = suspended ? "suspended" : "running";
     currentTime = 0;
     destination = {};
 
     constructor() {
       built += 1;
       this.id = `ctx-${built}`;
+      latest = this;
     }
     createBuffer(_channels: number, length: number) {
       return { getChannelData: () => new Float32Array(length) };
@@ -60,6 +82,10 @@ export function stubAudio(): AudioStub {
       };
     }
     resume() {
+      resumeCalls += 1;
+      // Browsers ignore resume() until the page has seen a gesture.
+      // Applied synchronously so a test can assert right after dispatching.
+      if (resumeAllowed) this.state = "running";
       return Promise.resolve();
     }
     close() {
@@ -74,6 +100,11 @@ export function stubAudio(): AudioStub {
   return {
     contexts: () => built,
     clicks: () => started,
+    resumes: () => resumeCalls,
+    running: () => latest?.state === "running",
     closed,
+    allowResume: () => {
+      resumeAllowed = true;
+    },
   };
 }
