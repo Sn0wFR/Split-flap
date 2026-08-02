@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.1.0](https://github.com/Sn0wFR/Split-flap/compare/split-flap-v1.0.0...split-flap-v1.1.0) (2026-08-02)
+
+
+### Features
+
+* **core:** add SplitFlapBoard, a grid that refreshes in order ([9e168c8](https://github.com/Sn0wFR/Split-flap/commit/9e168c8a9d5cf9e99a20f2a27b5f547087634cf2))
+* **core:** boards with a refresh order, and a page-scoped sound engine ([ef17e49](https://github.com/Sn0wFR/Split-flap/commit/ef17e499e8465ac36c69dd47d5a2f4f3fb0fb2bb))
+* **core:** turn through whole words with the `words` option ([d136f9c](https://github.com/Sn0wFR/Split-flap/commit/d136f9cf9959559d87019ca4c5512b711977bfcd))
+* **core:** turn through whole words with the words option ([9e19b0d](https://github.com/Sn0wFR/Split-flap/commit/9e19b0df3a6eb8f7927f0ad5a006e7a2083744a5))
+* **site:** use a word module for the status column too ([a91fc68](https://github.com/Sn0wFR/Split-flap/commit/a91fc682768abc62f5936bcc616bd97274d456ea))
+
+
+### Bug Fixes
+
+* **site:** fill the departure board only once it is in view ([2118b64](https://github.com/Sn0wFR/Split-flap/commit/2118b642109f78813a9db22842c664809db32ddc))
+* **site:** fill the departure board only once it is in view ([6fab3c8](https://github.com/Sn0wFR/Split-flap/commit/6fab3c822af749f708ab48035cd798ba1c8c8ae5))
+
+
+### Performance
+
+* **core:** read the shading depth once per instance ([b06d6b5](https://github.com/Sn0wFR/Split-flap/commit/b06d6b575ea7e047b5ef0dce8b10e43d2db1a6c2))
+
+
+### Refactors
+
+* **sound:** make the click engine page-scoped ([476e43d](https://github.com/Sn0wFR/Split-flap/commit/476e43d548e3db144f603ef1fb20b13133effa8e))
+
 ## 1.0.0 (2026-08-02)
 
 
