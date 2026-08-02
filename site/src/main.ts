@@ -380,10 +380,13 @@ function buildBoard(): void {
         chars: "alphanumeric",
         align: "center",
       }),
+      // Also a word module: the six statuses are a fixed set, which is
+      // exactly what a real status unit carries — one leaf each. Time,
+      // flight and gate stay character modules because they are not fixed:
+      // the clock is computed, and A1-D30 is 120 combinations, not a list.
       status: new SplitFlap(cell("is-status"), {
         ...shared,
-        length: 11,
-        chars: "letters",
+        words: [...statuses[lang]],
       }),
       statusIndex: 0,
     });
@@ -428,7 +431,12 @@ function refreshBoard(): void {
 function retranslateBoard(): void {
   for (const row of boardRows) {
     const label = statuses[lang][row.statusIndex];
-    if (label) void row.status.set(label, { immediate: true });
+    if (!label) continue;
+    // The drum itself is in the other language, so swap the leaves before
+    // asking for one. Rebuilding paints rather than turns, and the set is
+    // immediate, so the column stays still and silent.
+    row.status.setOptions({ words: [...statuses[lang]] });
+    void row.status.set(label, { immediate: true });
   }
 }
 
