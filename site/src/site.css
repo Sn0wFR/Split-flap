@@ -668,22 +668,19 @@ pre code {
   overflow-x: auto;
 }
 
-/* One grid for the header and every row, so the columns cannot drift apart.
-   Each column is as wide as its widest set of flaps and no wider. */
-.board__grid {
-  display: grid;
-  grid-template-columns: repeat(5, max-content);
-  column-gap: clamp(0.75rem, 2vw, 1.75rem);
-  row-gap: 0.45rem;
-  align-items: center;
-  min-width: max-content;
+/* The grid itself comes from the library; only its spacing and the look of
+   the headings are ours. */
+.board .sfb {
+  --sfb-column-gap: clamp(0.75rem, 2vw, 1.75rem);
+  --sfb-row-gap: 0.45rem;
 }
 
-.board__th {
+.board .sfb__label {
   font-family: var(--mono);
   font-size: 0.68rem;
   letter-spacing: 0.14em;
   color: var(--ink-faint);
+  opacity: 1;
   padding-bottom: 0.6rem;
   border-bottom: 1px solid var(--line);
   margin-bottom: 0.3rem;

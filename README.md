@@ -111,6 +111,71 @@ leaf printed `GENÈVE`. In markup the list is comma-separated:
 <split-flap words="PARIS CDG, LISBOA, REYKJAVIK" value="LISBOA"></split-flap>
 ```
 
+## Boards
+
+A grid of displays that refresh together, for a departure board or any large
+sign. Columns are configured exactly like standalone displays.
+
+```js
+import { SplitFlapBoard } from "@sn0wfr/split-flap";
+
+const board = new SplitFlapBoard("#departures", {
+  labels: ["TIME", "FLIGHT", "DESTINATION"],
+  columns: [
+    { length: 5, chars: " 0123456789:" },
+    { length: 6 },
+    { words: ["PARIS CDG", "LISBOA", "REYKJAVIK"] },
+  ],
+  order: "rows",
+  cascade: 110,
+});
+
+await board.set([
+  ["11:42", "KL441", "PARIS CDG"],
+  ["12:05", "TP431", "LISBOA"],
+]);
+```
+
+`set()` takes the values row-major and resolves once the last cell settles.
+Omit `rows` and the board sizes itself to the data.
+
+### Refresh order
+
+`order` decides the sequence in which cells start turning, and `cascade` how
+many milliseconds separate one rank from the next.
+
+| Order            | Effect                                               |
+| ---------------- | ---------------------------------------------------- |
+| `"simultaneous"` | Everything at once. The default.                     |
+| `"rows"`         | Row by row — how a departure board actually updates. |
+| `"columns"`      | Column by column, left to right.                     |
+| `"cells"`        | Cell by cell in reading order.                       |
+| `"random"`       | Cell by cell, shuffled afresh on every refresh.      |
+
+Each of those is a rank function underneath: the board sorts by rank and holds
+each cell back by `rank × cascade`. Passing your own is the same shape, which
+makes a diagonal ripple one line:
+
+```js
+board.setOptions({ order: ({ row, column }) => row + column });
+```
+
+### Board options
+
+| Option     | Type                 | Default          | Description                                           |
+| ---------- | -------------------- | ---------------- | ----------------------------------------------------- |
+| `columns`  | `SplitFlapOptions[]` | required         | One entry per column.                                 |
+| `defaults` | `SplitFlapOptions`   | —                | Applied to every column, before its own options.      |
+| `labels`   | `string[]`           | —                | Column headings. Omit for a bare grid.                |
+| `rows`     | `number`             | auto             | Fixed row count. Omitted, the board follows the data. |
+| `order`    | `RefreshOrder`       | `"simultaneous"` | Sequence cells start turning in.                      |
+| `cascade`  | `number`             | `90`             | Milliseconds between one rank and the next.           |
+| `onSettle` | `(detail) => void`   | —                | Fired when every cell has settled.                    |
+
+`cell(row, column)` hands back the underlying display, so a single column can
+still be driven on its own. Re-labelling through `setOptions({ labels })`
+updates the headings in place and leaves those displays alive.
+
 ## Options
 
 | Option                 | Type                               | Default          | Description                                                    |

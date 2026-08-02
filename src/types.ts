@@ -102,6 +102,67 @@ export interface SplitFlapOptions {
   onStart?: (detail: StartDetail) => void;
 }
 
+/** Where a cell sits in the board, passed to a custom refresh order. */
+export interface BoardCell {
+  row: number;
+  column: number;
+  /** Total rows on the board. */
+  rows: number;
+  /** Total columns on the board. */
+  columns: number;
+}
+
+/**
+ * The sequence in which a board's cells start turning.
+ *
+ * Every named order is a rank function underneath: the board sorts by rank
+ * and holds each cell back by `rank × cascade`. A custom function returns
+ * that rank, so a diagonal ripple is `({ row, column }) => row + column`.
+ */
+export type RefreshOrder =
+  /** Everything at once. */
+  | "simultaneous"
+  /** Row by row, top to bottom — how a departure board actually updates. */
+  | "rows"
+  /** Column by column, left to right. */
+  | "columns"
+  /** Cell by cell in reading order. */
+  | "cells"
+  /** Cell by cell, shuffled afresh on every refresh. */
+  | "random"
+  | ((cell: BoardCell) => number);
+
+export interface SplitFlapBoardOptions {
+  /**
+   * One entry per column, each configured exactly like a standalone
+   * display. Merged over `defaults`.
+   */
+  columns: SplitFlapOptions[];
+
+  /** Options shared by every column, before per-column overrides. */
+  defaults?: SplitFlapOptions;
+
+  /** Optional header text, one per column. Omit for a bare grid. */
+  labels?: string[];
+
+  /** Fixed row count. Omit to size the board to whatever `set()` is given. */
+  rows?: number;
+
+  /** Sequence in which cells start turning. */
+  order?: RefreshOrder;
+
+  /** Milliseconds between one rank in that order and the next. */
+  cascade?: number;
+
+  /** Fired when every cell on the board has settled. */
+  onSettle?: (detail: BoardSettleDetail) => void;
+}
+
+export interface BoardSettleDetail {
+  /** Values now displayed, row by row. */
+  rows: string[][];
+}
+
 export interface FlipDetail {
   /** Index of the flap that moved. */
   index: number;

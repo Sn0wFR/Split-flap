@@ -447,15 +447,9 @@ export function Status({ state }) {
             aéroport. Chaque colonne a son propre alphabet et son propre rythme.
           </p>
 
-          <!-- Header and rows share one grid so the columns line up. -->
+          <!-- SplitFlapBoard builds the grid, headings included. -->
           <div class="board">
-            <div class="board__grid" id="board-grid">
-              <span class="board__th" data-i18n="demo.time">HEURE</span>
-              <span class="board__th" data-i18n="demo.flight">VOL</span>
-              <span class="board__th" data-i18n="demo.dest">DESTINATION</span>
-              <span class="board__th" data-i18n="demo.gate">PTE</span>
-              <span class="board__th" data-i18n="demo.status">STATUT</span>
-            </div>
+            <div id="board-grid"></div>
           </div>
 
           <div class="board__actions">
