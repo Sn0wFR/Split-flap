@@ -86,6 +86,35 @@ describe("<split-flap>", () => {
     expect(readTop(node)).toBe("LONDON");
   });
 
+  it("reads a semicolon-separated colors attribute", () => {
+    const node = mount(
+      '<split-flap value="AB" chars=" AB" colors="A: rgb(163, 43, 34); B: #1c7a45"></split-flap>',
+    );
+    const panels = [
+      ...node.querySelectorAll<HTMLElement>(".sf__panel--top"),
+    ].map((panel) => panel.style.getPropertyValue("--sf-bg-top"));
+
+    // Semicolons rather than commas, so the rgb() colour survives intact.
+    expect(panels).toEqual(["rgb(163, 43, 34)", "#1c7a45"]);
+  });
+
+  it("reads a JSON colors attribute, glyph colour and all", () => {
+    const node = mount(
+      `<split-flap value="A" chars=" A" colors='{"A":{"bg":"#d9a406","color":"#241802"}}'></split-flap>`,
+    );
+    const panel = node.querySelector<HTMLElement>(".sf__panel--top");
+    expect(panel?.style.getPropertyValue("--sf-bg-top")).toBe("#d9a406");
+    expect(panel?.style.color).toBe("#241802");
+  });
+
+  it("clears the colours rather than throwing on a malformed attribute", () => {
+    const node = mount(
+      '<split-flap value="A" chars=" A" colors="{not json"></split-flap>',
+    );
+    const panel = node.querySelector<HTMLElement>(".sf__panel--top");
+    expect(panel?.style.getPropertyValue("--sf-bg-top")).toBe("");
+  });
+
   it("applies the theme attribute as a class", () => {
     const node = mount('<split-flap value="A" theme="amber"></split-flap>');
     expect(node.classList.contains("sf--amber")).toBe(true);

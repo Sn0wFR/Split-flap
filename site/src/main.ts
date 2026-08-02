@@ -3,8 +3,9 @@ import {
   SplitFlapBoard,
   alphabets,
   createClicker,
+  flapColors,
 } from "../../src/index.js";
-import type { Clicker } from "../../src/index.js";
+import type { ColorMap, Clicker } from "../../src/index.js";
 import {
   airlines,
   apiEvents,
@@ -16,6 +17,7 @@ import {
   heroPhrases,
   HTML_KEYS,
   statuses,
+  statusPalette,
   type Lang,
   type Row,
 } from "./i18n.js";
@@ -330,6 +332,21 @@ const statusIndexes: number[] = [];
 
 let board: SplitFlapBoard | null = null;
 
+/**
+ * The status column's colours, keyed by the word on the leaf.
+ *
+ * Rebuilt per language rather than stored, because the keys are the statuses
+ * themselves — a French board looks up ANNULE, an English one CANCELLED.
+ */
+function statusColors(): ColorMap {
+  const map: ColorMap = {};
+  statuses[lang].forEach((status, i) => {
+    const name = statusPalette[i];
+    if (name) map[status] = flapColors[name];
+  });
+  return map;
+}
+
 /** Column headings, in the current language. */
 function boardLabels(): string[] {
   const dict = dictionaries[lang];
@@ -373,7 +390,11 @@ function buildBoard(): void {
       // exactly what a real status unit carries. Time, flight and gate stay
       // character modules because they are not fixed sets — the clock is
       // computed, and A1-D30 is 120 combinations, not a list.
-      { words: [...statuses[lang]] },
+      //
+      // And a coloured one: a fixed set of words is exactly the case where a
+      // colour per leaf earns its keep, so a cancellation reads red from
+      // across the hall rather than being spelt out.
+      { words: [...statuses[lang]], colors: statusColors() },
     ],
   });
 
@@ -428,8 +449,12 @@ function retranslateBoard(): void {
 
     // The drum follows the language even before the board has been filled:
     // otherwise the first fill asks for a French status on an English drum
-    // and lands on the blank leaf.
-    display.setOptions({ words: [...statuses[lang]] });
+    // and lands on the blank leaf. The colours are keyed by those same
+    // words, so they have to be handed over in the same breath.
+    display.setOptions({
+      words: [...statuses[lang]],
+      colors: statusColors(),
+    });
 
     // Rebuilding paints rather than turns, and the set is immediate, so the
     // column stays still and silent.

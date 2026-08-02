@@ -64,11 +64,19 @@ export function SplitFlap({
     uppercase,
     normalize,
     theme,
+    colors,
     size,
     sound,
     volume,
     ariaLive,
   } = options;
+
+  // A colour map is almost always a fresh object literal, so its identity
+  // changes on every render even when nothing about it has. Comparing by
+  // content stops a parent re-render from reconfiguring the display for
+  // nothing; a function form has no content to compare, only identity.
+  const colorKey =
+    typeof colors === "function" ? colors : JSON.stringify(colors ?? null);
 
   // Everything except `value` reconfigures the instance in place.
   useEffect(() => {
@@ -85,6 +93,7 @@ export function SplitFlap({
       uppercase,
       normalize,
       theme,
+      colors: initial.current.colors,
       size,
       sound,
       volume,
@@ -106,6 +115,7 @@ export function SplitFlap({
     uppercase,
     normalize,
     theme,
+    colorKey,
     size,
     sound,
     volume,

@@ -1,16 +1,21 @@
 export { SplitFlap } from "./core.js";
 export { SplitFlapBoard } from "./board.js";
 export { alphabets, resolveAlphabet, deaccent } from "./alphabets.js";
+export { flapColors } from "./colors.js";
 export { ensureStyles, styles } from "./styles.js";
 export { createClicker, playClick, closeAudio } from "./sound.js";
 export { SplitFlapElement, defineSplitFlapElement } from "./element.js";
 
 export type { AlphabetName } from "./alphabets.js";
+export type { FlapColorName } from "./colors.js";
 export type { Clicker } from "./sound.js";
 export type {
   Align,
   BoardCell,
   BoardSettleDetail,
+  ColorMap,
+  FlapColor,
+  FlapColors,
   RefreshOrder,
   SplitFlapBoardOptions,
   FlipDetail,

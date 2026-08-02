@@ -7,6 +7,41 @@ export type Align = "left" | "center" | "right";
 export type ThemeName =
   "airport" | "amber" | "vintage" | "terminal" | "paper" | (string & {});
 
+/** The colours one flap wears. */
+export interface FlapColors {
+  /** Flap background. Covers both halves unless `bgBottom` narrows it. */
+  bg?: string;
+
+  /**
+   * Lower half only, for the two-tone a real leaf has. Defaults to `bg`.
+   */
+  bgBottom?: string;
+
+  /**
+   * Glyph colour. Set it whenever `bg` is light — the default glyph is
+   * near-white, and yellow on white reads as nothing at all.
+   */
+  color?: string;
+}
+
+/** A CSS colour, which is shorthand for `{ bg }`, or the full set. */
+export type FlapColor = string | FlapColors;
+
+/**
+ * Which flaps wear which colours.
+ *
+ * As a record it maps an entry — a glyph in character mode, a whole word in
+ * word mode — to the colours a flap takes while it rests on that entry. Keys
+ * are matched the way input is: case and accents are forgiven unless
+ * `uppercase` and `normalize` are turned off.
+ *
+ * As a function it is handed the entry and the flap's position instead, so a
+ * fixed flap can be coloured whatever it happens to show.
+ */
+export type ColorMap =
+  | Record<string, FlapColor>
+  | ((entry: string, index: number) => FlapColor | null | undefined);
+
 export interface SplitFlapOptions {
   /** Text to display. Defaults to an empty (all blank) board. */
   value?: string;
@@ -70,6 +105,26 @@ export interface SplitFlapOptions {
 
   /** Preset theme, applied as a `sf--<name>` class. */
   theme?: ThemeName;
+
+  /**
+   * Colour flaps by what they show — red for CANCELLED, green for ON TIME.
+   *
+   * The colour rides the leaf rather than the frame: a flap turning from red
+   * to green drops a red leaf onto a green one, the way a real board carries
+   * the colour on the leaf itself.
+   *
+   * ```ts
+   * new SplitFlap("#status", {
+   *   words: ["ON TIME", "DELAYED", "CANCELLED"],
+   *   colors: {
+   *     "ON TIME": flapColors.green,
+   *     DELAYED: flapColors.amber,
+   *     CANCELLED: flapColors.red,
+   *   },
+   * });
+   * ```
+   */
+  colors?: ColorMap;
 
   /** Shorthand for the `--sf-size` custom property, e.g. `"2.5rem"`. */
   size?: string;

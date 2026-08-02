@@ -111,6 +111,69 @@ leaf printed `GENÈVE`. In markup the list is comma-separated:
 <split-flap words="PARIS CDG, LISBOA, REYKJAVIK" value="LISBOA"></split-flap>
 ```
 
+### Colours
+
+A real board does not paint every leaf the same. `colors` gives a flap its own
+background and glyph colour according to what it shows — red for a cancelled
+service, amber for a delayed one, green for one running to time:
+
+```js
+import { SplitFlap, flapColors } from "@sn0wfr/split-flap";
+
+const status = new SplitFlap("#status", {
+  words: ["ON TIME", "DELAYED", "CANCELLED"],
+  colors: {
+    "ON TIME": flapColors.green,
+    DELAYED: flapColors.amber,
+    CANCELLED: flapColors.red,
+  },
+});
+
+await status.set("CANCELLED"); // the leaf that lands is the red one
+```
+
+The colour rides the leaf rather than the frame: a flap turning from red to
+green drops a red leaf onto a green one, the way a real board carries the
+colour on the leaf itself.
+
+Keys are entries — a glyph in character mode, a whole word in word mode — and
+are matched the way the value is, so `SUPPRIME` reaches a leaf printed
+`SUPPRIMÉ`. A bare CSS colour is shorthand for the background; the long form
+takes the glyph colour too, which matters the moment a background is light:
+
+```js
+new SplitFlap("#gate", {
+  chars: " 0123456789",
+  colors: {
+    1: "#a32b22", // background only
+    2: { bg: "#d9a406", color: "#241802" }, // dark glyph on amber
+    3: { bg: "#1c7a45", bgBottom: "#196b3d" }, // two-tone leaf
+  },
+});
+```
+
+`flapColors` ships five ready-made pairs — `red`, `amber`, `green`, `blue`,
+`slate` — each one a background and a glyph colour that clears WCAG AA
+together. A background on its own leaves the theme's near-white glyph in
+place, which is fine on a dark colour and invisible on a light one.
+
+Pass a function to colour by position instead of by value. It is handed the
+entry and the flap's index, and `null` means no colour:
+
+```js
+new SplitFlap("#board", {
+  colors: (entry, index) => (index === 0 ? flapColors.red : null),
+});
+```
+
+In markup the map reads like an inline style. Semicolons separate the pairs
+rather than the commas `words` uses, because a CSS colour is allowed to
+contain one; JSON is accepted for the full form:
+
+```html
+<split-flap words="ON TIME, DELAYED" colors="DELAYED: #d9a406"></split-flap>
+```
+
 ## Boards
 
 A grid of displays that refresh together, for a departure board or any large
@@ -194,6 +257,7 @@ updates the headings in place and leaves those displays alive.
 | `uppercase`            | `boolean`                          | `true`           | Upper-case the value before display.                           |
 | `normalize`            | `boolean`                          | `true`           | Strip accents missing from the alphabet (`DÉPART` → `DEPART`). |
 | `theme`                | `ThemeName`                        | —                | Applied as an `sf--<name>` class.                              |
+| `colors`               | `ColorMap`                         | —                | Flap background and glyph colour, by entry or by position.     |
 | `size`                 | `string`                           | `3rem`           | Shorthand for `--sf-size`.                                     |
 | `sound`                | `boolean`                          | `false`          | Mechanical click per step. Needs a prior user gesture.         |
 | `volume`               | `number`                           | `0.25`           | Click volume, 0–1.                                             |
@@ -250,6 +314,9 @@ new SplitFlap("#board", { theme: "midnight" });
 Shipped themes: `airport`, `amber`, `vintage`, `terminal`, `paper`. The full
 list of variables is in the
 [documentation](https://sn0wfr.github.io/Split-flap/#api).
+
+A theme paints the whole display. [`colors`](#colours) paints one flap at a
+time, on top of whichever theme is in force.
 
 ## Browser support
 

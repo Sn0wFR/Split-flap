@@ -439,6 +439,202 @@ describe("word mode", () => {
   });
 });
 
+describe("colours", () => {
+  /** Background written onto each static top half. */
+  function topBg(board: SplitFlap): string[] {
+    return [...board.root.querySelectorAll<HTMLElement>(".sf__panel--top")].map(
+      (node) => node.style.getPropertyValue("--sf-bg-top"),
+    );
+  }
+
+  /** Background written onto each static bottom half. */
+  function bottomBg(board: SplitFlap): string[] {
+    return [
+      ...board.root.querySelectorAll<HTMLElement>(".sf__panel--bottom"),
+    ].map((node) => node.style.getPropertyValue("--sf-bg-bottom"));
+  }
+
+  /** Glyph colour, which is set on the panel and inherited by the char. */
+  function topColor(board: SplitFlap): string[] {
+    return [...board.root.querySelectorAll<HTMLElement>(".sf__panel--top")].map(
+      (node) => node.style.color,
+    );
+  }
+
+  it("colours a flap by the glyph it rests on", () => {
+    const board = new SplitFlap(host, {
+      value: "AB",
+      chars: " AB",
+      colors: { A: "#ff0000" },
+    });
+    expect(topBg(board)).toEqual(["#ff0000", ""]);
+  });
+
+  it("treats a bare string as the background of both halves", () => {
+    const board = new SplitFlap(host, {
+      value: "A",
+      chars: " A",
+      colors: { A: "#ff0000" },
+    });
+    expect(topBg(board)).toEqual(["#ff0000"]);
+    expect(bottomBg(board)).toEqual(["#ff0000"]);
+  });
+
+  it("gives the lower half its own colour when asked", () => {
+    const board = new SplitFlap(host, {
+      value: "A",
+      chars: " A",
+      colors: { A: { bg: "#333333", bgBottom: "#111111" } },
+    });
+    expect(topBg(board)).toEqual(["#333333"]);
+    expect(bottomBg(board)).toEqual(["#111111"]);
+  });
+
+  it("sets the glyph colour alongside the background", () => {
+    const board = new SplitFlap(host, {
+      value: "A",
+      chars: " A",
+      colors: { A: { bg: "#d9a406", color: "#241802" } },
+    });
+    expect(topBg(board)).toEqual(["#d9a406"]);
+    expect(topColor(board)).toEqual(["#241802"]);
+  });
+
+  it("leaves an uncoloured board's flaps entirely alone", () => {
+    const board = new SplitFlap(host, { value: "AB", chars: " AB" });
+    expect(topBg(board)).toEqual(["", ""]);
+    expect(topColor(board)).toEqual(["", ""]);
+  });
+
+  it("matches a key through the casing the board applies", () => {
+    const board = new SplitFlap(host, {
+      value: "a",
+      chars: " A",
+      colors: { a: "#ff0000" },
+    });
+    expect(readTop(board)).toBe("A");
+    expect(topBg(board)).toEqual(["#ff0000"]);
+  });
+
+  it("matches a key whose accents the caller did not type", () => {
+    const board = new SplitFlap(host, {
+      words: ["SUPPRIMÉ", "À L'HEURE"],
+      value: "SUPPRIMÉ",
+      colors: { SUPPRIME: "#a32b22" },
+    });
+    expect(topBg(board)).toEqual(["#a32b22"]);
+  });
+
+  it("matches an accented key against a leaf printed without them", () => {
+    const board = new SplitFlap(host, {
+      words: ["SUPPRIME"],
+      value: "SUPPRIME",
+      colors: { SUPPRIMÉ: "#a32b22" },
+    });
+    expect(topBg(board)).toEqual(["#a32b22"]);
+  });
+
+  it("prefers an exact key over another that merely strips to it", () => {
+    const board = new SplitFlap(host, {
+      words: ["SUPPRIMÉ"],
+      value: "SUPPRIMÉ",
+      colors: { SUPPRIME: "#000000", SUPPRIMÉ: "#a32b22" },
+    });
+    expect(topBg(board)).toEqual(["#a32b22"]);
+  });
+
+  it("takes a function, so a fixed flap can be coloured by position", () => {
+    const seen: Array<[string, number]> = [];
+    const board = new SplitFlap(host, {
+      value: "AB",
+      chars: " AB",
+      colors: (entry, index) => {
+        seen.push([entry, index]);
+        return index === 0 ? "#ff0000" : null;
+      },
+    });
+    expect(topBg(board)).toEqual(["#ff0000", ""]);
+    expect(seen).toEqual([
+      ["A", 0],
+      ["B", 1],
+    ]);
+  });
+
+  it("colours a word module by the word on the leaf", () => {
+    const board = new SplitFlap(host, {
+      words: ["ON TIME", "CANCELLED"],
+      value: "CANCELLED",
+      colors: { CANCELLED: "#a32b22", "ON TIME": "#1c7a45" },
+    });
+    expect(topBg(board)).toEqual(["#a32b22"]);
+  });
+
+  it("carries the outgoing colour down on the falling leaf", async () => {
+    vi.useFakeTimers();
+    const board = new SplitFlap(host, {
+      value: "A",
+      length: 1,
+      chars: " AB",
+      duration: 100,
+      stagger: 0,
+      jitter: 0,
+      colors: { A: "#ff0000", B: "#00ff00" },
+    });
+
+    const settled = board.set("B");
+    await vi.advanceTimersByTimeAsync(50);
+
+    // Mid-flip the halves show different glyphs, so they wear different
+    // colours: the leaf falling away keeps A's, the frame beneath already
+    // shows B's.
+    const front = board.root.querySelector<HTMLElement>(".sf__leaf--front");
+    const back = board.root.querySelector<HTMLElement>(".sf__leaf--back");
+    expect(topBg(board)).toEqual(["#00ff00"]);
+    expect(bottomBg(board)).toEqual(["#ff0000"]);
+    expect(front?.style.getPropertyValue("--sf-bg-top")).toBe("#ff0000");
+    expect(back?.style.getPropertyValue("--sf-bg-bottom")).toBe("#00ff00");
+
+    await vi.advanceTimersByTimeAsync(200);
+    await settled;
+    expect(topBg(board)).toEqual(["#00ff00"]);
+    expect(bottomBg(board)).toEqual(["#00ff00"]);
+  });
+
+  it("settles both halves on one colour when a flip is interrupted", async () => {
+    vi.useFakeTimers();
+    const board = new SplitFlap(host, {
+      value: "A",
+      length: 1,
+      chars: " AB",
+      duration: 100,
+      stagger: 0,
+      jitter: 0,
+      colors: { A: "#ff0000", B: "#00ff00" },
+    });
+
+    void board.set("B");
+    await vi.advanceTimersByTimeAsync(50);
+    board.stop();
+
+    expect(topBg(board)).toEqual(bottomBg(board));
+  });
+
+  it("recolours in place through setOptions", () => {
+    const board = new SplitFlap(host, {
+      value: "A",
+      chars: " A",
+      colors: { A: "#ff0000" },
+    });
+
+    board.setOptions({ colors: { A: "#0000ff" } });
+    expect(topBg(board)).toEqual(["#0000ff"]);
+
+    board.setOptions({ colors: undefined });
+    expect(topBg(board)).toEqual([""]);
+    expect(topColor(board)).toEqual([""]);
+  });
+});
+
 describe("sound", () => {
   const boards: SplitFlap[] = [];
 

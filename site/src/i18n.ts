@@ -238,6 +238,21 @@ export const statuses: Record<Lang, string[]> = {
   en: ["ON TIME", "BOARDING", "DELAYED", "LAST CALL", "CANCELLED", "GATE OPEN"],
 };
 
+/**
+ * A colour per status, in the order `statuses` lists them — the same order in
+ * both languages, so one list covers the two. Green runs to time, blue is
+ * information, amber asks you to pay attention, red is the flight you have
+ * lost.
+ */
+export const statusPalette = [
+  "green",
+  "blue",
+  "amber",
+  "amber",
+  "red",
+  "slate",
+] as const;
+
 export const destinations = [
   "PARIS CDG",
   "LISBOA",
@@ -361,6 +376,13 @@ export const apiOptions: Row[] = [
     fallback: "—",
     fr: "Thème appliqué comme classe sf--<nom>.",
     en: "Theme applied as an sf--<name> class.",
+  },
+  {
+    name: "colors",
+    type: "ColorMap",
+    fallback: "—",
+    fr: "Fond et couleur de glyphe d'un volet, selon ce qu'il affiche — rouge pour un vol annulé, ambre pour un retard, vert pour un départ à l'heure. Une fonction (entrée, index) colore par position. Cinq paires prêtes à l'emploi dans « flapColors ».",
+    en: "Flap background and glyph colour, by what it shows — red for a cancelled flight, amber for a delay, green for on time. A function (entry, index) colours by position instead. Five ready-made pairs ship in `flapColors`.",
   },
   {
     name: "size",

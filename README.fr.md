@@ -112,6 +112,71 @@ volet imprimé `GENÈVE`. En HTML, la liste est séparée par des virgules :
 <split-flap words="PARIS CDG, LISBOA, REYKJAVIK" value="LISBOA"></split-flap>
 ```
 
+### Couleurs
+
+Un vrai tableau ne peint pas tous ses volets pareil. `colors` donne à un volet
+son propre fond et sa propre couleur de glyphe selon ce qu'il affiche : rouge
+pour un train supprimé, ambre pour un retard, vert pour un départ à l'heure.
+
+```js
+import { SplitFlap, flapColors } from "@sn0wfr/split-flap";
+
+const statut = new SplitFlap("#statut", {
+  words: ["A L'HEURE", "RETARDÉ", "SUPPRIMÉ"],
+  colors: {
+    "A L'HEURE": flapColors.green,
+    RETARDÉ: flapColors.amber,
+    SUPPRIMÉ: flapColors.red,
+  },
+});
+
+await statut.set("SUPPRIMÉ"); // le volet qui tombe est déjà le rouge
+```
+
+La couleur voyage avec le volet, pas avec le cadre : un module qui passe du
+rouge au vert laisse tomber un volet rouge sur un volet vert, comme un vrai
+tableau qui porte la couleur sur la feuille elle-même.
+
+Les clés sont des entrées — un glyphe en mode caractère, un mot entier en mode
+mot — et sont rapprochées comme l'est la valeur : `SUPPRIME` atteint donc un
+volet imprimé `SUPPRIMÉ`. Une couleur CSS seule est un raccourci pour le fond ;
+la forme longue prend aussi la couleur du glyphe, ce qui devient indispensable
+dès que le fond est clair :
+
+```js
+new SplitFlap("#voie", {
+  chars: " 0123456789",
+  colors: {
+    1: "#a32b22", // fond seul
+    2: { bg: "#d9a406", color: "#241802" }, // glyphe sombre sur ambre
+    3: { bg: "#1c7a45", bgBottom: "#196b3d" }, // volet bicolore
+  },
+});
+```
+
+`flapColors` livre cinq paires prêtes à l'emploi — `red`, `amber`, `green`,
+`blue`, `slate` — chacune un fond et un glyphe qui passent ensemble le niveau
+AA du WCAG. Un fond seul laisse en place le glyphe quasi blanc du thème :
+parfait sur une couleur sombre, invisible sur une couleur claire.
+
+Une fonction colore par position plutôt que par valeur. Elle reçoit l'entrée et
+l'index du volet ; `null` signifie « pas de couleur » :
+
+```js
+new SplitFlap("#board", {
+  colors: (entry, index) => (index === 0 ? flapColors.red : null),
+});
+```
+
+En HTML, la table se lit comme un style inline. Les paires sont séparées par
+des points-virgules et non par les virgules qu'utilise `words`, parce qu'une
+couleur CSS a le droit d'en contenir une ; le JSON est accepté pour la forme
+complète :
+
+```html
+<split-flap words="A L'HEURE, RETARDÉ" colors="RETARDÉ: #d9a406"></split-flap>
+```
+
 ## Tableaux
 
 Une grille d'afficheurs qui se rafraîchissent ensemble, pour un tableau de
@@ -196,6 +261,7 @@ en place et laisse ces afficheurs vivants.
 | `uppercase`            | `boolean`                          | `true`           | Passe la valeur en majuscules avant l'affichage.                   |
 | `normalize`            | `boolean`                          | `true`           | Retire les accents absents de l'alphabet (`DÉPART` → `DEPART`).    |
 | `theme`                | `ThemeName`                        | —                | Appliqué comme classe `sf--<nom>`.                                 |
+| `colors`               | `ColorMap`                         | —                | Fond et glyphe d'un volet, par entrée ou par position.             |
 | `size`                 | `string`                           | `3rem`           | Raccourci pour `--sf-size`.                                        |
 | `sound`                | `boolean`                          | `false`          | Clic mécanique à chaque cran. Nécessite une interaction préalable. |
 | `volume`               | `number`                           | `0.25`           | Volume du clic, 0 à 1.                                             |
@@ -252,6 +318,9 @@ new SplitFlap("#board", { theme: "midnight" });
 Thèmes fournis : `airport`, `amber`, `vintage`, `terminal`, `paper`. La liste
 complète des variables est dans la
 [documentation](https://sn0wfr.github.io/Split-flap/#api).
+
+Un thème peint tout l'afficheur. [`colors`](#couleurs) peint un volet à la
+fois, par-dessus le thème en vigueur.
 
 ## Compatibilité
 

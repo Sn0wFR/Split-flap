@@ -1,10 +1,52 @@
 import { SplitFlap } from "./core.js";
 import type {
   Align,
+  ColorMap,
+  FlapColor,
   SetOptions,
   SplitFlapOptions,
   ThemeName,
 } from "./types.js";
+
+/**
+ * Read the `colors` attribute.
+ *
+ * The compact form reads like an inline style, which is what it is —
+ * `colors="DELAYED: #d9a406; CANCELLED: #b3261e"`. Pairs are separated by
+ * semicolons rather than the commas `words` uses, because a CSS colour is
+ * allowed to contain a comma and `rgb(163, 43, 34)` must survive.
+ *
+ * JSON is accepted too, for the one thing the compact form cannot say: a
+ * glyph colour alongside its background.
+ *
+ * Anything unparseable yields an empty map rather than throwing. An
+ * attribute is not somewhere a caller can catch anything, and clearing the
+ * colours makes the mistake visible without taking the display down.
+ */
+function parseColors(raw: string): ColorMap {
+  const source = raw.trim();
+  if (!source) return {};
+
+  if (source.startsWith("{")) {
+    try {
+      const parsed: unknown = JSON.parse(source);
+      if (!parsed || typeof parsed !== "object") return {};
+      return parsed as Record<string, FlapColor>;
+    } catch {
+      return {};
+    }
+  }
+
+  const map: Record<string, FlapColor> = {};
+  for (const pair of source.split(";")) {
+    const split = pair.indexOf(":");
+    if (split === -1) continue;
+    const key = pair.slice(0, split).trim();
+    const value = pair.slice(split + 1).trim();
+    if (key && value) map[key] = value;
+  }
+  return map;
+}
 
 /**
  * `<split-flap>` — the same display as a native custom element.
@@ -32,6 +74,7 @@ export class SplitFlapElement extends HTMLElement {
     "uppercase",
     "normalize",
     "theme",
+    "colors",
     "size",
     "sound",
     "volume",
@@ -180,6 +223,8 @@ export class SplitFlapElement extends HTMLElement {
     assign("uppercase", bool("uppercase"));
     assign("normalize", bool("normalize"));
     assign("theme", text("theme") as ThemeName | undefined);
+    const colors = text("colors");
+    if (colors !== undefined) options.colors = parseColors(colors);
     assign("size", text("size"));
     assign("sound", bool("sound"));
     assign("volume", num("volume"));

@@ -1,7 +1,9 @@
 import { deaccent, resolveAlphabet } from "./alphabets.js";
+import { toFlapColors } from "./colors.js";
 import { playClick } from "./sound.js";
 import { ensureStyles } from "./styles.js";
 import type {
+  FlapColors,
   FlipDetail,
   SetOptions,
   SettleDetail,
@@ -56,7 +58,9 @@ const DEFAULTS: Defaults = {
 /** DOM handles for one flap, kept so the render loop never queries the tree. */
 interface Flap {
   root: HTMLElement;
+  topPanel: HTMLElement;
   topChar: HTMLElement;
+  bottomPanel: HTMLElement;
   bottomChar: HTMLElement;
   frontLeaf: HTMLElement;
   frontChar: HTMLElement;
@@ -120,6 +124,12 @@ export class SplitFlap {
    * once and invalidated by `setOptions` rather than probed per run.
    */
   private shade: number | null = null;
+  /**
+   * The record form of `colors`, keyed the way entries actually read, so a
+   * lookup during a flip is a single property access. Null while `colors` is
+   * unset or a function, neither of which has anything to precompute.
+   */
+  private palette: Record<string, FlapColors> | null = null;
   /** Whether the Web Animations API is available in this environment. */
   private readonly canAnimate =
     typeof Element !== "undefined" &&
@@ -135,6 +145,7 @@ export class SplitFlap {
     this.root = root as HTMLElement;
     this.opts = { ...DEFAULTS, ...options };
     this.alphabet = this.buildAlphabet();
+    this.buildPalette();
 
     if (this.opts.injectStyles) ensureStyles();
 
@@ -273,7 +284,7 @@ export class SplitFlap {
     this.root.classList.add("is-flipping");
 
     this.flaps.forEach((flap, i) => {
-      this.cancelFlap(flap);
+      this.cancelFlap(flap, i);
       const steps = plans[i]!;
       if (steps === 0) return;
       flap.remaining = steps;
@@ -311,6 +322,12 @@ export class SplitFlap {
     // certainly does. Cheaper to re-read once here than on every run.
     this.shade = null;
 
+    // Keys are indexed under the casing and accent rules in force, so those
+    // moving invalidates the palette just as surely as the map itself.
+    const recolors =
+      "colors" in patch || "uppercase" in patch || "normalize" in patch;
+    if (recolors) this.buildPalette();
+
     if ("theme" in patch) this.applyTheme(previousTheme, patch.theme);
     if ("size" in patch) {
       if (patch.size) this.root.style.setProperty("--sf-size", patch.size);
@@ -340,6 +357,10 @@ export class SplitFlap {
       this.target = padded;
       this.paint(padded);
       this.resolveSettle();
+    } else if (recolors) {
+      // A repaint would fight anything still turning; the flaps only need
+      // their new colours, at whatever glyph they are currently showing.
+      this.recolor();
     }
   }
 
@@ -533,7 +554,9 @@ export class SplitFlap {
 
       this.flaps.push({
         root,
+        topPanel,
         topChar,
+        bottomPanel,
         bottomChar,
         frontLeaf,
         frontChar,
@@ -560,10 +583,97 @@ export class SplitFlap {
       const entry = this.alphabet[index]!;
       flap.topChar.textContent = entry;
       flap.bottomChar.textContent = entry;
+      if (this.opts.colors) this.tintFlap(flap, i, entry);
       flap.root.classList.remove("is-flipping");
     });
     this.root.classList.remove("is-flipping");
     this.root.setAttribute("aria-label", this.text(entries).trim());
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Colour                                                              */
+  /* ------------------------------------------------------------------ */
+
+  /**
+   * Index the record form of `colors` under the keys entries actually carry.
+   *
+   * A caller writing `{ delayed: ... }` against an upper-case board, or
+   * `{ SUPPRIME: ... }` against a leaf printed `SUPPRIMÉ`, means the flap in
+   * front of them — the same latitude `prepare()` gives the value itself.
+   * Resolving that once here keeps the lookup in `step()` a plain hash hit.
+   */
+  private buildPalette(): void {
+    const map = this.opts.colors;
+    if (!map || typeof map === "function") {
+      this.palette = null;
+      return;
+    }
+
+    const out: Record<string, FlapColors> = {};
+    for (const [key, value] of Object.entries(map)) {
+      const colors = toFlapColors(value);
+      if (!colors) continue;
+      const cased = this.opts.uppercase ? key.toUpperCase() : key;
+      // The accent-free alias is a fallback, never an override: an exact key
+      // must win over another key that merely strips to the same letters.
+      if (this.opts.normalize) {
+        const bare = deaccent(cased);
+        if (bare !== cased && !(bare in out)) out[bare] = colors;
+      }
+      out[cased] = colors;
+    }
+    this.palette = out;
+  }
+
+  /** The colours a flap wears while resting on `entry`, if any. */
+  private colorsFor(entry: string, index: number): FlapColors | null {
+    const map = this.opts.colors;
+    if (!map) return null;
+    if (typeof map === "function") return toFlapColors(map(entry, index));
+
+    const direct = this.palette?.[entry];
+    if (direct) return direct;
+    // The other direction of the same latitude: a key spelt without accents
+    // still reaches the leaf that carries them.
+    if (!this.opts.normalize) return null;
+    return this.palette?.[deaccent(entry)] ?? null;
+  }
+
+  /**
+   * Paint one surface.
+   *
+   * Which half a surface belongs to decides the custom property it takes:
+   * the front leaf is the upper half falling, the back leaf the lower half
+   * swinging up. Nothing is set when there is no colour, so a display
+   * without `colors` keeps the stylesheet's values untouched.
+   */
+  private tint(
+    node: HTMLElement,
+    colors: FlapColors | null,
+    half: "top" | "bottom",
+  ): void {
+    const property = half === "top" ? "--sf-bg-top" : "--sf-bg-bottom";
+    const bg = half === "top" ? colors?.bg : (colors?.bgBottom ?? colors?.bg);
+    if (bg) node.style.setProperty(property, bg);
+    else node.style.removeProperty(property);
+    if (colors?.color) node.style.color = colors.color;
+    else node.style.removeProperty("color");
+  }
+
+  /** Put all four surfaces of a flap on one entry's colours. */
+  private tintFlap(flap: Flap, index: number, entry: string): void {
+    const colors = this.colorsFor(entry, index);
+    this.tint(flap.topPanel, colors, "top");
+    this.tint(flap.frontLeaf, colors, "top");
+    this.tint(flap.bottomPanel, colors, "bottom");
+    this.tint(flap.backLeaf, colors, "bottom");
+  }
+
+  /** Re-read the colour map for every flap where it stands. */
+  private recolor(): void {
+    this.flaps.forEach((flap, i) =>
+      this.tintFlap(flap, i, this.alphabet[flap.index]!),
+    );
   }
 
   /* ------------------------------------------------------------------ */
@@ -585,6 +695,20 @@ export class SplitFlap {
     flap.frontChar.textContent = current;
     flap.backChar.textContent = next;
 
+    // The colour rides the leaf, not the frame. Each surface simply wears
+    // the colour of the glyph printed on it, which puts the new colour on
+    // screen the moment the fall starts and lets the falling leaf carry the
+    // old one all the way down.
+    let landing: FlapColors | null = null;
+    if (this.opts.colors) {
+      landing = this.colorsFor(next, index);
+      const leaving = this.colorsFor(current, index);
+      this.tint(flap.topPanel, landing, "top");
+      this.tint(flap.frontLeaf, leaving, "top");
+      this.tint(flap.bottomPanel, leaving, "bottom");
+      this.tint(flap.backLeaf, landing, "bottom");
+    }
+
     flap.root.classList.add("is-flipping");
 
     const duration = this.jittered(this.opts.duration);
@@ -600,6 +724,7 @@ export class SplitFlap {
     flap.timer = setTimeout(() => {
       // Land the flip: the bottom half catches up and the leaves stand down.
       flap.bottomChar.textContent = next;
+      if (this.opts.colors) this.tint(flap.bottomPanel, landing, "bottom");
       this.clearAnimations(flap);
       flap.root.classList.remove("is-flipping");
 
@@ -673,7 +798,7 @@ export class SplitFlap {
     flap.anims = [];
   }
 
-  private cancelFlap(flap: Flap): void {
+  private cancelFlap(flap: Flap, index: number): void {
     if (flap.timer) clearTimeout(flap.timer);
     flap.timer = 0;
     flap.remaining = 0;
@@ -685,10 +810,13 @@ export class SplitFlap {
     const char = this.alphabet[flap.index]!;
     flap.topChar.textContent = char;
     flap.bottomChar.textContent = char;
+    // The halves were mid-flip in two different colours too, and the leaves
+    // hold whichever they were carrying. Settle all four on the same entry.
+    if (this.opts.colors) this.tintFlap(flap, index, char);
   }
 
   private cancelAll(): void {
-    for (const flap of this.flaps) this.cancelFlap(flap);
+    this.flaps.forEach((flap, i) => this.cancelFlap(flap, i));
     this.pending = 0;
     this.root.classList.remove("is-flipping");
   }

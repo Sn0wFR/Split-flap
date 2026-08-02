@@ -133,6 +133,21 @@ describe("values", () => {
     expect(board.cell(1, 2)).not.toBeNull();
     expect(board.cell(9, 9)).toBeNull();
   });
+
+  it("carries a column's colours down to every cell in it", async () => {
+    const board = new SplitFlapBoard(host, {
+      rows: 2,
+      columns: [
+        { words: ["ON TIME", "CANCELLED"], colors: { CANCELLED: "#a32b22" } },
+      ],
+    });
+    await board.set([["CANCELLED"], ["ON TIME"]], { immediate: true });
+
+    const painted = [
+      ...board.root.querySelectorAll<HTMLElement>(".sf__panel--top"),
+    ].map((panel) => panel.style.getPropertyValue("--sf-bg-top"));
+    expect(painted).toEqual(["#a32b22", ""]);
+  });
 });
 
 describe("refresh order", () => {
