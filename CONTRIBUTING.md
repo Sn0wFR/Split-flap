@@ -56,9 +56,15 @@ next version. Merging that pull request tags the release, and the tag triggers
 Nothing about the version is edited by hand: `package.json`, `CHANGELOG.md` and
 `.release-please-manifest.json` are all maintained by the action.
 
-Publishing reads `NPM_TOKEN` from the `npm` environment rather than from the
-repository secrets, so the token is restricted to `main` by that environment's
-deployment-branch rule and cannot be read from a pull request branch.
+Publishing uses no credential at all. npm is configured with a trusted
+publisher for the package, and exchanges the OIDC identity the `publish` job
+presents for the right to publish, having checked that it came from this
+repository, from `release-please.yml`, in the `npm` environment. That is why
+the job declares `id-token: write` and why moving or renaming the workflow
+file means updating the package settings on npm to match.
+
+The same identity signs the provenance attestation, which npm only accepts
+from a public repository — publishing from a private one fails with a 422.
 
 The first release is `1.0.0`, set by `initial-version` in
 `release-please-config.json`. Until a release exists release-please has no
