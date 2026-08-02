@@ -421,22 +421,56 @@ function refreshBoard(): void {
 function retranslateBoard(): void {
   if (!board) return;
   board.setOptions({ labels: boardLabels() });
+
   for (let r = 0; r < ROW_COUNT; r += 1) {
-    const label = statuses[lang][statusIndexes[r] ?? 0];
     const display = board.cell(r, 4);
-    if (!label || !display) continue;
-    // The drum itself is in the other language, so swap the leaves before
-    // asking for one. Rebuilding paints rather than turns, and the set is
-    // immediate, so the column stays still and silent.
+    if (!display) continue;
+
+    // The drum follows the language even before the board has been filled:
+    // otherwise the first fill asks for a French status on an English drum
+    // and lands on the blank leaf.
     display.setOptions({ words: [...statuses[lang]] });
-    void display.set(label, { immediate: true });
+
+    // Rebuilding paints rather than turns, and the set is immediate, so the
+    // column stays still and silent.
+    const label = statuses[lang][statusIndexes[r] ?? -1];
+    if (label) void display.set(label, { immediate: true });
   }
 }
 
+/**
+ * Fill the board the first time it scrolls into view.
+ *
+ * It sits well below the fold, so filling it at boot animated thirty
+ * displays nobody could see — 1321 flips against the hero's 180 — and with
+ * sound on, clattered through every one of them. Waiting means the board
+ * comes alive exactly when you arrive at it.
+ */
+function fillWhenSeen(): void {
+  const host = document.querySelector<HTMLElement>("#board-grid");
+  if (!host) return;
+
+  if (typeof IntersectionObserver !== "function") {
+    refreshBoard();
+    return;
+  }
+
+  const watcher = new IntersectionObserver(
+    (entries) => {
+      if (!entries.some((entry) => entry.isIntersecting)) return;
+      watcher.disconnect();
+      refreshBoard();
+    },
+    // A little ahead of the fold, so the first row is already turning by
+    // the time it reaches the eye.
+    { rootMargin: "150px" },
+  );
+
+  watcher.observe(host);
+}
+
 buildBoard();
-// Fill the board once at boot; from then on only the shuffle button and
-// the language switch touch it, and they mean different things.
-refreshBoard();
+fillWhenSeen();
 
 document
   .querySelector("#board-shuffle")
