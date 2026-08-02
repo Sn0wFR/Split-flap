@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.1](https://github.com/Sn0wFR/Split-flap/compare/split-flap-v1.1.0...split-flap-v1.1.1) (2026-08-02)
+
+
+### Bug Fixes
+
+* **element:** forward SetOptions from set() to the display ([9b12acc](https://github.com/Sn0wFR/Split-flap/commit/9b12acc89bb091165bbdf250114d25dfe7da0bd9))
+* **element:** forward SetOptions from set() to the display ([ba0a936](https://github.com/Sn0wFR/Split-flap/commit/ba0a936ea48d3527d341d665be9d98890a0f173f)), closes [#15](https://github.com/Sn0wFR/Split-flap/issues/15)
+
 ## [1.1.0](https://github.com/Sn0wFR/Split-flap/compare/split-flap-v1.0.0...split-flap-v1.1.0) (2026-08-02)
 
 
