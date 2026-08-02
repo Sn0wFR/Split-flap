@@ -367,10 +367,12 @@ function buildBoard(): void {
         length: 6,
         chars: "alphanumeric",
       }),
+      // A word module, like the destination unit on a real Solari board:
+      // one leaf per city rather than one per letter. It sits next to the
+      // character columns, so both modes are visible at once.
       dest: new SplitFlap(cell("is-dest"), {
         ...shared,
-        length: 11,
-        chars: "letters",
+        words: [...destinations],
       }),
       gate: new SplitFlap(cell("is-gate"), {
         ...shared,

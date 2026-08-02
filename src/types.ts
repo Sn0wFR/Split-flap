@@ -20,6 +20,21 @@ export interface SplitFlapOptions {
   /** Glyphs each flap cycles through — a preset name or a custom string. */
   chars?: AlphabetName | string;
 
+  /**
+   * Whole words to cycle through instead of characters, the way a real
+   * destination module carries one city per leaf rather than one letter.
+   *
+   * Setting this makes the display a single wide flap that turns through
+   * the list until it reaches the word asked for. `chars`, `length` and
+   * `align` no longer apply; the flap widens to the longest entry. A blank
+   * leaf is added at the front, so `set("")` returns the board to empty.
+   *
+   * ```ts
+   * new SplitFlap("#dest", { words: ["PARIS", "LONDON", "MADRID"] });
+   * ```
+   */
+  words?: string[];
+
   /** Where a short value sits inside a fixed-length board. */
   align?: Align;
 

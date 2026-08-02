@@ -319,6 +319,125 @@ describe("animation", () => {
   });
 });
 
+describe("word mode", () => {
+  const CITIES = ["PARIS", "LONDON", "MADRID", "GENÈVE"];
+
+  it("renders a single flap, whatever the word's length", () => {
+    const board = new SplitFlap(host, { words: CITIES, value: "LONDON" });
+    expect(flapCount(board)).toBe(1);
+    expect(readTop(board)).toBe("LONDON");
+    expect(board.value).toBe("LONDON");
+  });
+
+  it("rests blank on an unset board", () => {
+    const board = new SplitFlap(host, { words: CITIES });
+    expect(readTop(board)).toBe("");
+    expect(board.value).toBe("");
+  });
+
+  it("ignores length, which belongs to character mode", () => {
+    const board = new SplitFlap(host, {
+      words: CITIES,
+      length: 12,
+      value: "PARIS",
+    });
+    expect(flapCount(board)).toBe(1);
+    expect(readTop(board)).toBe("PARIS");
+  });
+
+  it("widens the flap to the longest word", () => {
+    const board = new SplitFlap(host, { words: CITIES });
+    // "LONDON" and "MADRID" are the longest at 6, plus a character of margin.
+    expect(board.root.style.getPropertyValue("--sf-flap-width")).toBe("7ch");
+  });
+
+  it("matches a word whose accents the caller did not type", () => {
+    const board = new SplitFlap(host, { words: CITIES, value: "GENEVE" });
+    expect(readTop(board)).toBe("GENÈVE");
+  });
+
+  it("falls back to blank for a word that is not on the drum", () => {
+    const board = new SplitFlap(host, { words: CITIES, value: "TOKYO" });
+    expect(readTop(board)).toBe("");
+  });
+
+  it("turns forward through whole words, one per flip", async () => {
+    vi.useFakeTimers();
+    const board = new SplitFlap(host, {
+      words: ["PARIS", "LONDON", "MADRID"],
+      value: "PARIS",
+      duration: 10,
+      stagger: 0,
+      jitter: 0,
+    });
+
+    const seen: string[] = [];
+    board.root.addEventListener("splitflap:flip", (event) => {
+      seen.push((event as CustomEvent<{ char: string }>).detail.char);
+    });
+
+    const settled = board.set("MADRID");
+    await vi.advanceTimersByTimeAsync(200);
+    await settled;
+
+    // The drum reads ["", PARIS, LONDON, MADRID]: from PARIS the only way
+    // forward to MADRID is through LONDON, never backwards.
+    expect(seen).toEqual(["LONDON", "MADRID"]);
+    expect(readTop(board)).toBe("MADRID");
+    expect(readBottom(board)).toBe("MADRID");
+  });
+
+  it("wraps through the blank leaf rather than running backwards", async () => {
+    vi.useFakeTimers();
+    const board = new SplitFlap(host, {
+      words: ["PARIS", "LONDON"],
+      value: "LONDON",
+      duration: 10,
+      stagger: 0,
+      jitter: 0,
+    });
+
+    const seen: string[] = [];
+    board.root.addEventListener("splitflap:flip", (event) => {
+      seen.push((event as CustomEvent<{ char: string }>).detail.char);
+    });
+
+    const settled = board.set("PARIS");
+    await vi.advanceTimersByTimeAsync(200);
+    await settled;
+
+    expect(seen).toEqual(["", "PARIS"]);
+  });
+
+  it("swaps the word list through setOptions", () => {
+    const board = new SplitFlap(host, { words: CITIES, value: "PARIS" });
+    board.setOptions({ words: ["BERLIN", "VIENNA"] });
+
+    // PARIS is not on the new drum, so the module returns to blank.
+    expect(readTop(board)).toBe("");
+    expect(board.root.style.getPropertyValue("--sf-flap-width")).toBe("7ch");
+  });
+
+  it("de-duplicates a repeated word", () => {
+    const board = new SplitFlap(host, {
+      words: ["PARIS", "PARIS", "LONDON"],
+      value: "LONDON",
+    });
+    expect(readTop(board)).toBe("LONDON");
+    // Blank + PARIS + LONDON: the repeat would have made travel ambiguous.
+    expect(board.length).toBe(1);
+  });
+
+  it("keeps casing when uppercase is off", () => {
+    const board = new SplitFlap(host, {
+      words: ["Paris", "London"],
+      value: "Paris",
+      uppercase: false,
+    });
+    expect(readTop(board)).toBe("Paris");
+  });
+});
+
 describe("sound", () => {
   const boards: SplitFlap[] = [];
 

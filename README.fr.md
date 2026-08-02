@@ -87,11 +87,37 @@ passez `injectStyles: false` et importez-la vous-même :
 import "@sn0wfr/split-flap/style.css";
 ```
 
+### Mode mot
+
+Sur un vrai tableau Solari, le module destination n'épelle pas la ville lettre
+par lettre : chaque volet porte un nom entier, et le module tourne jusqu'au
+bon. C'est ce que fait `words` :
+
+```js
+const dest = new SplitFlap("#dest", {
+  words: ["PARIS CDG", "LISBOA", "REYKJAVIK", "SINGAPORE"],
+});
+
+await dest.set("REYKJAVIK"); // défile dans la liste, jamais en arrière
+```
+
+L'affichage devient un volet unique, dimensionné au mot le plus long. Un volet
+vierge est ajouté en tête, donc `set("")` le ramène à vide. `chars`, `length`
+et `align` relèvent du mode caractère et ne s'appliquent plus.
+
+Les accents sont rapprochés dans les deux sens : `set("GENEVE")` atteint un
+volet imprimé `GENÈVE`. En HTML, la liste est séparée par des virgules :
+
+```html
+<split-flap words="PARIS CDG, LISBOA, REYKJAVIK" value="LISBOA"></split-flap>
+```
+
 ## Options
 
 | Option                 | Type                               | Défaut           | Description                                                        |
 | ---------------------- | ---------------------------------- | ---------------- | ------------------------------------------------------------------ |
 | `value`                | `string`                           | `""`             | Texte affiché.                                                     |
+| `words`                | `string[]`                         | —                | Mots entiers à faire défiler, au lieu de caractères.               |
 | `length`               | `number`                           | auto             | Nombre de volets. Omis, le tableau s'adapte à la valeur.           |
 | `chars`                | `AlphabetName \| string`           | `"alphanumeric"` | Glyphes parcourus par chaque volet.                                |
 | `align`                | `"left" \| "center" \| "right"`    | `"left"`         | Position d'une valeur plus courte que le tableau.                  |

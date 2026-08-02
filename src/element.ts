@@ -16,6 +16,7 @@ export class SplitFlapElement extends HTMLElement {
     "value",
     "length",
     "chars",
+    "words",
     "align",
     "pad-char",
     "duration",
@@ -149,6 +150,15 @@ export class SplitFlapElement extends HTMLElement {
     assign("value", text("value"));
     assign("length", num("length"));
     assign("chars", text("chars"));
+    // Comma-separated, so `words="PARIS, LONDON"` reads naturally in markup.
+    // Empty entries are dropped: the blank leaf is added by the display.
+    const words = text("words");
+    if (words !== undefined) {
+      options.words = words
+        .split(",")
+        .map((word) => word.trim())
+        .filter(Boolean);
+    }
     assign("align", text("align") as Align | undefined);
     assign("padChar", text("pad-char"));
     assign("duration", num("duration"));

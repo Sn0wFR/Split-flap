@@ -104,11 +104,12 @@ export class SplitFlap {
   readonly root: HTMLElement;
 
   private opts: Resolved;
-  private alphabet: string;
+  /** Entries a flap can rest on: single characters, or whole words. */
+  private alphabet: string[];
   private track: HTMLElement;
   private flaps: Flap[] = [];
-  /** Padded text currently at rest, or being animated towards. */
-  private target: string;
+  /** One entry per flap, at rest or being animated towards. */
+  private target: string[];
   private settleResolvers: Array<() => void> = [];
   private pending = 0;
   private clicker: Clicker | null = null;
@@ -151,16 +152,38 @@ export class SplitFlap {
 
     this.target = this.pad(this.prepare(this.opts.value));
     this.build(this.target.length);
+    this.sizeToWords();
     this.paint(this.target);
+  }
+
+  /**
+   * Widen the flap to the longest word it may have to show.
+   *
+   * Character mode gets its width from the stylesheet, one glyph wide. A
+   * word module has to fit "SAN FRANCISCO", and only the instance knows how
+   * long that is. `ch` tracks the font, and the property stays overridable.
+   */
+  private sizeToWords(): void {
+    if (!this.wordMode) return;
+    const longest = this.alphabet.reduce(
+      (max, e) => Math.max(max, e.length),
+      0,
+    );
+    this.root.style.setProperty("--sf-flap-width", `${longest + 1}ch`);
   }
 
   /* ------------------------------------------------------------------ */
   /* Public API                                                          */
   /* ------------------------------------------------------------------ */
 
+  /** The displayed value: entries joined back into one string. */
+  private text(entries: string[] = this.target): string {
+    return entries.join("");
+  }
+
   /** Text currently displayed, trailing padding trimmed. */
   get value(): string {
-    return this.target.replace(/\s+$/, "");
+    return this.text().replace(/\s+$/, "");
   }
 
   set value(next: string) {
@@ -184,9 +207,10 @@ export class SplitFlap {
   set(next: string, setOptions: SetOptions = {}): Promise<void> {
     if (this.destroyed) return Promise.resolve();
 
-    const from = this.target;
+    const from = this.text();
     const prepared = this.prepare(next);
-    const padded = this.pad(prepared, this.opts.length ?? prepared.length);
+    const padded = this.pad(prepared);
+    const to = this.text(padded);
 
     // Growing or shrinking an auto-sized board means rebuilding the row,
     // and there is nothing to animate between two different geometries.
@@ -196,13 +220,13 @@ export class SplitFlap {
       this.target = padded;
       this.paint(padded);
       this.resolveSettle();
-      this.emit("start", { from, to: padded });
-      this.emit("settle", { value: padded });
+      this.emit("start", { from, to });
+      this.emit("settle", { value: to });
       return Promise.resolve();
     }
 
     this.target = padded;
-    this.root.setAttribute("aria-label", padded.trim());
+    this.root.setAttribute("aria-label", to.trim());
 
     const immediate =
       setOptions.immediate ||
@@ -212,19 +236,19 @@ export class SplitFlap {
       this.cancelAll();
       this.paint(padded);
       this.resolveSettle();
-      this.emit("start", { from, to: padded });
-      this.emit("settle", { value: padded });
+      this.emit("start", { from, to });
+      this.emit("settle", { value: to });
       return Promise.resolve();
     }
 
-    this.emit("start", { from, to: padded });
+    this.emit("start", { from, to });
 
     // Work out each flap's travel before touching the DOM, so a no-op set
     // resolves immediately instead of scheduling empty timers.
     const plans = this.flaps.map((flap, i) => {
-      const to = this.indexOf(padded[i]!);
+      const wanted = this.indexOf(padded[i]!);
       let steps =
-        (to - flap.index + this.alphabet.length) % this.alphabet.length;
+        (wanted - flap.index + this.alphabet.length) % this.alphabet.length;
       if (steps > 0 || this.opts.extraLoops > 0) {
         while (steps < this.opts.minSteps) steps += this.alphabet.length;
         steps += this.alphabet.length * this.opts.extraLoops;
@@ -233,7 +257,7 @@ export class SplitFlap {
     });
 
     if (plans.every((steps) => steps === 0)) {
-      this.emit("settle", { value: padded });
+      this.emit("settle", { value: to });
       return Promise.resolve();
     }
 
@@ -260,7 +284,7 @@ export class SplitFlap {
 
     if (this.pending === 0) {
       this.resolveSettle();
-      this.emit("settle", { value: padded });
+      this.emit("settle", { value: to });
     }
 
     return promise;
@@ -273,6 +297,9 @@ export class SplitFlap {
     const previousTheme = this.opts.theme;
     const rebuilds =
       ("chars" in patch && patch.chars !== this.opts.chars) ||
+      // Compared by content: callers pass a fresh array every render.
+      ("words" in patch &&
+        this.text(patch.words ?? []) !== this.text(this.opts.words ?? [])) ||
       ("length" in patch && patch.length !== this.opts.length) ||
       ("align" in patch && patch.align !== this.opts.align) ||
       ("padChar" in patch && patch.padChar !== this.opts.padChar) ||
@@ -308,9 +335,11 @@ export class SplitFlap {
 
     if (rebuilds) {
       this.cancelAll();
+      const kept = this.value;
       this.alphabet = this.buildAlphabet();
-      const padded = this.pad(this.prepare(this.value));
+      const padded = this.pad(this.prepare(kept));
       this.build(padded.length);
+      this.sizeToWords();
       this.target = padded;
       this.paint(padded);
       this.resolveSettle();
@@ -320,19 +349,21 @@ export class SplitFlap {
   /** Freeze every flap where it stands, resolving any pending `set()`. */
   stop(): void {
     this.cancelAll();
-    this.target = this.flaps.map((f) => this.alphabet[f.index]!).join("");
-    this.root.setAttribute("aria-label", this.target.trim());
+    this.target = this.flaps.map((f) => this.alphabet[f.index]!);
+    this.root.setAttribute("aria-label", this.text().trim());
     this.resolveSettle();
   }
 
   /** Flip to a random value of the current length. Handy for demos. */
   randomize(): Promise<void> {
-    const pool = this.alphabet.trim() || this.alphabet;
-    let out = "";
-    for (let i = 0; i < this.flaps.length; i += 1) {
-      out += pool[Math.floor(Math.random() * pool.length)];
-    }
-    return this.set(out);
+    // Skip the blank leaf: a random pick should show something.
+    const pool = this.alphabet.filter((entry) => entry.trim() !== "");
+    const source = pool.length ? pool : this.alphabet;
+    const picked = Array.from(
+      { length: this.flaps.length },
+      () => source[Math.floor(Math.random() * source.length)]!,
+    );
+    return this.set(picked.join(""));
   }
 
   /** Tear the display down and release timers, audio and DOM. */
@@ -356,30 +387,58 @@ export class SplitFlap {
   /* Text handling                                                       */
   /* ------------------------------------------------------------------ */
 
-  private buildAlphabet(): string {
-    const raw = resolveAlphabet(this.opts.chars);
-    const source = this.opts.uppercase ? raw.toUpperCase() : raw;
-    // De-duplicate: a repeated glyph would make the shortest path ambiguous.
+  /**
+   * The glyphs one flap can rest on.
+   *
+   * In word mode an entry is a whole word, which is what a real destination
+   * module carries — one leaf per city, not one per letter. Everything
+   * downstream treats an entry as opaque, so the two modes share the same
+   * travel, timing and rendering.
+   */
+  private buildAlphabet(): string[] {
+    const source = this.opts.words
+      ? // A blank leaf first, so an unset board rests empty and `set("")`
+        // has somewhere to land — the same role the leading space plays in
+        // the character alphabets.
+        ["", ...this.opts.words]
+      : [...resolveAlphabet(this.opts.chars)];
+
+    const cased = this.opts.uppercase
+      ? source.map((entry) => entry.toUpperCase())
+      : source;
+
+    // De-duplicate: a repeated entry would make the travel distance to it
+    // ambiguous.
     const seen = new Set<string>();
-    let out = "";
-    for (const char of source) {
-      if (!seen.has(char)) {
-        seen.add(char);
-        out += char;
+    const out: string[] = [];
+    for (const entry of cased) {
+      if (!seen.has(entry)) {
+        seen.add(entry);
+        out.push(entry);
       }
     }
-    return out || " ";
+    return out.length ? out : [" "];
   }
 
-  /** Normalise input into glyphs that exist in the alphabet. */
-  private prepare(input: string): string {
+  /** True when the board turns through whole words rather than characters. */
+  private get wordMode(): boolean {
+    return this.opts.words !== undefined;
+  }
+
+  /** Resolve input into entries the board can actually rest on. */
+  private prepare(input: string): string[] {
     let text = input ?? "";
     if (this.opts.uppercase) text = text.toUpperCase();
 
-    let out = "";
+    if (this.wordMode) {
+      // A word display is a single module, so the whole input is one entry.
+      return [this.matchWord(text)];
+    }
+
+    const out: string[] = [];
     for (const char of text) {
       if (this.alphabet.includes(char)) {
-        out += char;
+        out.push(char);
         continue;
       }
       if (this.opts.normalize) {
@@ -388,39 +447,60 @@ export class SplitFlap {
         // the first that the board can actually show.
         const match = [...stripped].find((c) => this.alphabet.includes(c));
         if (match) {
-          out += match;
+          out.push(match);
           continue;
         }
       }
-      out += this.fallbackChar();
+      out.push(this.fallbackEntry());
     }
     return out;
   }
 
-  private fallbackChar(): string {
+  /** Find the word an input names, falling back to the blank leaf. */
+  private matchWord(text: string): string {
+    if (this.alphabet.includes(text)) return text;
+
+    if (this.opts.normalize) {
+      // "GENEVE" should reach a leaf printed "GENÈVE": compare both sides
+      // stripped rather than requiring the caller to match the accents.
+      const wanted = deaccent(text);
+      const match = this.alphabet.find((entry) => deaccent(entry) === wanted);
+      if (match !== undefined) return match;
+    }
+    return this.fallbackEntry();
+  }
+
+  private fallbackEntry(): string {
+    if (this.wordMode)
+      return this.alphabet.includes("") ? "" : this.alphabet[0]!;
     return this.alphabet.includes(this.opts.padChar)
       ? this.opts.padChar
       : this.alphabet[0]!;
   }
 
-  private pad(text: string, width = this.opts.length ?? text.length): string {
-    const fill = this.fallbackChar();
-    if (text.length >= width) return text.slice(0, width);
-    const missing = width - text.length;
+  private pad(
+    entries: string[],
+    // A word display is a single module, so `length` has no say over it.
+    width = this.wordMode ? 1 : (this.opts.length ?? entries.length),
+  ): string[] {
+    const fill = this.fallbackEntry();
+    if (entries.length >= width) return entries.slice(0, width);
+    const missing = width - entries.length;
+    const filler = Array.from({ length: missing }, () => fill);
     switch (this.opts.align) {
       case "right":
-        return fill.repeat(missing) + text;
+        return [...filler, ...entries];
       case "center": {
         const left = Math.floor(missing / 2);
-        return fill.repeat(left) + text + fill.repeat(missing - left);
+        return [...filler.slice(0, left), ...entries, ...filler.slice(left)];
       }
       default:
-        return text + fill.repeat(missing);
+        return [...entries, ...filler];
     }
   }
 
-  private indexOf(char: string | undefined): number {
-    const i = this.alphabet.indexOf(char ?? this.fallbackChar());
+  private indexOf(entry: string | undefined): number {
+    const i = this.alphabet.indexOf(entry ?? this.fallbackEntry());
     return i === -1 ? 0 : i;
   }
 
@@ -477,18 +557,18 @@ export class SplitFlap {
   }
 
   /** Snap every flap to the given text with no animation. */
-  private paint(text: string): void {
+  private paint(entries: string[]): void {
     this.flaps.forEach((flap, i) => {
-      const index = this.indexOf(text[i]);
+      const index = this.indexOf(entries[i]);
       flap.index = index;
       flap.remaining = 0;
-      const char = this.alphabet[index]!;
-      flap.topChar.textContent = char;
-      flap.bottomChar.textContent = char;
+      const entry = this.alphabet[index]!;
+      flap.topChar.textContent = entry;
+      flap.bottomChar.textContent = entry;
       flap.root.classList.remove("is-flipping");
     });
     this.root.classList.remove("is-flipping");
-    this.root.setAttribute("aria-label", text.trim());
+    this.root.setAttribute("aria-label", this.text(entries).trim());
   }
 
   /* ------------------------------------------------------------------ */
@@ -601,7 +681,7 @@ export class SplitFlap {
     if (this.pending > 0) return;
     this.root.classList.remove("is-flipping");
     this.resolveSettle();
-    this.emit("settle", { value: this.target });
+    this.emit("settle", { value: this.text() });
   }
 
   private clearAnimations(flap: Flap): void {

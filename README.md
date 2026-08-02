@@ -86,11 +86,37 @@ The stylesheet is injected automatically. If your bundler owns CSS, pass
 import "@sn0wfr/split-flap/style.css";
 ```
 
+### Word mode
+
+A real Solari destination unit does not spell a city out letter by letter —
+each leaf carries a whole name, and the module turns until it reaches the
+right one. Pass `words` to get that:
+
+```js
+const dest = new SplitFlap("#dest", {
+  words: ["PARIS CDG", "LISBOA", "REYKJAVIK", "SINGAPORE"],
+});
+
+await dest.set("REYKJAVIK"); // turns through the list, never backwards
+```
+
+The display becomes a single flap, wide enough for the longest entry. A blank
+leaf is added at the front, so `set("")` returns it to empty. `chars`,
+`length` and `align` belong to character mode and no longer apply.
+
+Accents are matched loosely in both directions, so `set("GENEVE")` reaches a
+leaf printed `GENÈVE`. In markup the list is comma-separated:
+
+```html
+<split-flap words="PARIS CDG, LISBOA, REYKJAVIK" value="LISBOA"></split-flap>
+```
+
 ## Options
 
 | Option                 | Type                               | Default          | Description                                                    |
 | ---------------------- | ---------------------------------- | ---------------- | -------------------------------------------------------------- |
 | `value`                | `string`                           | `""`             | Text to display.                                               |
+| `words`                | `string[]`                         | —                | Whole words to turn through instead of characters.             |
 | `length`               | `number`                           | auto             | Number of flaps. Omitted, the board sizes itself to the value. |
 | `chars`                | `AlphabetName \| string`           | `"alphanumeric"` | Glyphs each flap cycles through.                               |
 | `align`                | `"left" \| "center" \| "right"`    | `"left"`         | Where a value shorter than the board sits.                     |
