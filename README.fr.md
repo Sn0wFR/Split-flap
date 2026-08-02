@@ -112,6 +112,72 @@ volet imprimé `GENÈVE`. En HTML, la liste est séparée par des virgules :
 <split-flap words="PARIS CDG, LISBOA, REYKJAVIK" value="LISBOA"></split-flap>
 ```
 
+## Tableaux
+
+Une grille d'afficheurs qui se rafraîchissent ensemble, pour un tableau de
+départs ou n'importe quel grand panneau. Chaque colonne se configure comme un
+afficheur autonome.
+
+```js
+import { SplitFlapBoard } from "@sn0wfr/split-flap";
+
+const board = new SplitFlapBoard("#departs", {
+  labels: ["HEURE", "VOL", "DESTINATION"],
+  columns: [
+    { length: 5, chars: " 0123456789:" },
+    { length: 6 },
+    { words: ["PARIS CDG", "LISBOA", "REYKJAVIK"] },
+  ],
+  order: "rows",
+  cascade: 110,
+});
+
+await board.set([
+  ["11:42", "KL441", "PARIS CDG"],
+  ["12:05", "TP431", "LISBOA"],
+]);
+```
+
+`set()` prend les valeurs ligne par ligne et se résout quand la dernière
+cellule s'est stabilisée. Sans `rows`, le tableau s'adapte aux données.
+
+### Ordre de rafraîchissement
+
+`order` décide dans quel ordre les cellules commencent à tourner, `cascade`
+combien de millisecondes séparent un rang du suivant.
+
+| Ordre            | Effet                                                     |
+| ---------------- | --------------------------------------------------------- |
+| `"simultaneous"` | Tout en même temps. Par défaut.                           |
+| `"rows"`         | Ligne par ligne — ce que fait un vrai tableau de départs. |
+| `"columns"`      | Colonne par colonne, de gauche à droite.                  |
+| `"cells"`        | Cellule par cellule, dans l'ordre de lecture.             |
+| `"random"`       | Cellule par cellule, mélangé à chaque rafraîchissement.   |
+
+Chacun n'est qu'une fonction de rang : le tableau trie par rang et retient
+chaque cellule de `rang × cascade`. Fournir la vôtre suit la même forme, ce
+qui met une ondulation en diagonale sur une seule ligne :
+
+```js
+board.setOptions({ order: ({ row, column }) => row + column });
+```
+
+### Options du tableau
+
+| Option     | Type                 | Défaut           | Description                                               |
+| ---------- | -------------------- | ---------------- | --------------------------------------------------------- |
+| `columns`  | `SplitFlapOptions[]` | requis           | Une entrée par colonne.                                   |
+| `defaults` | `SplitFlapOptions`   | —                | Appliqué à chaque colonne, avant ses propres options.     |
+| `labels`   | `string[]`           | —                | En-têtes de colonnes. Omis, la grille est nue.            |
+| `rows`     | `number`             | auto             | Nombre de lignes fixe. Omis, le tableau suit les données. |
+| `order`    | `RefreshOrder`       | `"simultaneous"` | Ordre de démarrage des cellules.                          |
+| `cascade`  | `number`             | `90`             | Millisecondes entre un rang et le suivant.                |
+| `onSettle` | `(detail) => void`   | —                | Déclenché quand toutes les cellules sont stabilisées.     |
+
+`cell(row, column)` renvoie l'afficheur sous-jacent, pour piloter une colonne
+seule au besoin. Renommer via `setOptions({ labels })` met les en-têtes à jour
+en place et laisse ces afficheurs vivants.
+
 ## Options
 
 | Option                 | Type                               | Défaut           | Description                                                        |

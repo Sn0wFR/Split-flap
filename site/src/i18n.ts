@@ -31,7 +31,7 @@ const fr: Dict = {
   "sound.off": "Activer le son mécanique",
   "sound.title": "Activer le son mécanique",
 
-  "hero.eyebrow": "Zéro dépendance · ~6,5 ko gzip · MIT",
+  "hero.eyebrow": "Zéro dépendance · 5,9 ko gzip · MIT",
   "hero.title": "Affichez du texte comme un tableau de départs",
   "hero.lede":
     "Une librairie qui rend n'importe quelle chaîne comme un panneau Solari : chaque volet tourne glyphe par glyphe jusqu'à sa cible, exactement comme la mécanique d'origine.",
@@ -133,7 +133,7 @@ const en: Dict = {
   "sound.off": "Turn on the mechanical sound",
   "sound.title": "Turn on the mechanical sound",
 
-  "hero.eyebrow": "Zero dependencies · ~6.5 kB gzip · MIT",
+  "hero.eyebrow": "Zero dependencies · 5.9 kB gzip · MIT",
   "hero.title": "Render text like a departure board",
   "hero.lede":
     "A library that renders any string as a Solari board: every flap turns one glyph at a time until it reaches its target, exactly like the original mechanism.",

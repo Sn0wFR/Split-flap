@@ -177,6 +177,40 @@
 }
 
 /* --------------------------------------------------------------------- */
+/* Board                                                                   */
+/* --------------------------------------------------------------------- */
+
+.sfb {
+  --sfb-column-gap: 1rem;
+  --sfb-row-gap: 0.45rem;
+  --sfb-label-color: currentColor;
+
+  display: block;
+  overflow-x: auto;
+}
+
+.sfb__grid {
+  display: grid;
+  /* max-content: every column takes the width of its widest display, so a
+     word module and a five-flap clock still line up with their headings. */
+  grid-template-columns: repeat(var(--sfb-columns, 1), max-content);
+  column-gap: var(--sfb-column-gap);
+  row-gap: var(--sfb-row-gap);
+  align-items: center;
+  min-width: max-content;
+}
+
+.sfb__label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--sfb-label-color);
+  opacity: 0.55;
+  padding-bottom: 0.35rem;
+}
+
+/* --------------------------------------------------------------------- */
 /* Themes                                                                  */
 /* --------------------------------------------------------------------- */
 

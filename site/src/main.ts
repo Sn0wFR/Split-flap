@@ -1,4 +1,9 @@
-import { SplitFlap, alphabets, createClicker } from "../../src/index.js";
+import {
+  SplitFlap,
+  SplitFlapBoard,
+  alphabets,
+  createClicker,
+} from "../../src/index.js";
 import type { Clicker } from "../../src/index.js";
 import {
   airlines,
@@ -310,20 +315,6 @@ if (playHost) {
 /* Departure board                                                       */
 /* ===================================================================== */
 
-interface BoardRow {
-  time: SplitFlap;
-  flight: SplitFlap;
-  dest: SplitFlap;
-  gate: SplitFlap;
-  status: SplitFlap;
-  /**
-   * Index into `statuses[lang]`. Keeping it lets a language switch re-label
-   * the column without inventing a different departure.
-   */
-  statusIndex: number;
-}
-
-const boardRows: BoardRow[] = [];
 const ROW_COUNT = 6;
 const GATE_LETTERS = ["A", "B", "C", "D"];
 
@@ -331,90 +322,92 @@ function pick<T>(list: readonly T[]): T {
   return list[Math.floor(Math.random() * list.length)]!;
 }
 
+/**
+ * Index into `statuses[lang]` for each row. Keeping it lets a language
+ * switch re-label the column without inventing a different departure.
+ */
+const statusIndexes: number[] = [];
+
+let board: SplitFlapBoard | null = null;
+
+/** Column headings, in the current language. */
+function boardLabels(): string[] {
+  const dict = dictionaries[lang];
+  return [
+    "demo.time",
+    "demo.flight",
+    "demo.dest",
+    "demo.gate",
+    "demo.status",
+  ].map((key) => dict[key] ?? "");
+}
+
 function buildBoard(): void {
   const host = document.querySelector<HTMLElement>("#board-grid");
   if (!host) return;
 
-  for (let i = 0; i < ROW_COUNT; i += 1) {
-    // Cells go straight into the shared grid — no per-row wrapper — so every
-    // column stays aligned with its header.
-    const cell = (className: string) => {
-      const node = document.createElement("div");
-      node.className = `board__cell ${className}`;
-      host.append(node);
-      return node;
-    };
-
-    const shared = {
+  board = new SplitFlapBoard(host, {
+    rows: ROW_COUNT,
+    labels: boardLabels(),
+    // Rows lower down start later, the way a real board cascades.
+    order: "rows",
+    cascade: 110,
+    defaults: {
       duration: 85,
       stagger: 35,
-      // Rows lower down start later, the way a real board cascades.
       minSteps: 2,
       size: "clamp(0.8rem, 2.1vw, 1.35rem)",
-      // Thirty columns click at once here. Per-cell volume has to sit far
+      // Dozens of flaps click at once here. Per-cell volume has to sit far
       // below the hero's or the sum clips into noise.
       volume: 0.05,
-    } as const;
-
-    boardRows.push({
-      time: new SplitFlap(cell("is-time"), {
-        ...shared,
-        length: 5,
-        chars: " 0123456789:",
-      }),
-      flight: new SplitFlap(cell("is-flight"), {
-        ...shared,
-        length: 6,
-        chars: "alphanumeric",
-      }),
+    },
+    columns: [
+      { length: 5, chars: " 0123456789:" },
+      { length: 6, chars: "alphanumeric" },
       // A word module, like the destination unit on a real Solari board:
       // one leaf per city rather than one per letter. It sits next to the
       // character columns, so both modes are visible at once.
-      dest: new SplitFlap(cell("is-dest"), {
-        ...shared,
-        words: [...destinations],
-      }),
-      gate: new SplitFlap(cell("is-gate"), {
-        ...shared,
-        length: 3,
-        chars: "alphanumeric",
-        align: "center",
-      }),
-      status: new SplitFlap(cell("is-status"), {
-        ...shared,
-        length: 11,
-        chars: "letters",
-      }),
-      statusIndex: 0,
-    });
-  }
+      { words: [...destinations] },
+      { length: 3, chars: "alphanumeric", align: "center" },
+      // Also a word module: the six statuses are a fixed set, which is
+      // exactly what a real status unit carries. Time, flight and gate stay
+      // character modules because they are not fixed sets — the clock is
+      // computed, and A1-D30 is 120 combinations, not a list.
+      { words: [...statuses[lang]] },
+    ],
+  });
 
-  for (const row of boardRows) {
-    ambient.push(row.time, row.flight, row.dest, row.gate, row.status);
+  for (let r = 0; r < ROW_COUNT; r += 1) {
+    for (let c = 0; c < 5; c += 1) {
+      const display = board.cell(r, c);
+      if (display) ambient.push(display);
+    }
   }
 }
 
-/** Fill every row with a fresh, plausible departure. */
-function refreshBoard(): void {
+/** A fresh, plausible set of departures. */
+function departures(): string[][] {
   const now = new Date();
-  boardRows.forEach((row, i) => {
+  return Array.from({ length: ROW_COUNT }, (_, i) => {
     const at = new Date(now.getTime() + (i + 1) * 17 * 60_000);
     const time = `${String(at.getHours()).padStart(2, "0")}:${String(
       at.getMinutes(),
     ).padStart(2, "0")}`;
 
-    void row.time.set(time);
-    void row.flight.set(
-      `${pick(airlines)}${String(100 + Math.floor(Math.random() * 899))}`,
-    );
-    void row.dest.set(pick(destinations));
-    void row.gate.set(
-      `${pick(GATE_LETTERS)}${1 + Math.floor(Math.random() * 30)}`,
-    );
+    statusIndexes[i] = Math.floor(Math.random() * statuses[lang].length);
 
-    row.statusIndex = Math.floor(Math.random() * statuses[lang].length);
-    void row.status.set(statuses[lang][row.statusIndex] ?? "");
+    return [
+      time,
+      `${pick(airlines)}${String(100 + Math.floor(Math.random() * 899))}`,
+      pick(destinations),
+      `${pick(GATE_LETTERS)}${1 + Math.floor(Math.random() * 30)}`,
+      statuses[lang][statusIndexes[i]!] ?? "",
+    ];
   });
+}
+
+function refreshBoard(): void {
+  void board?.set(departures());
 }
 
 /**
@@ -426,9 +419,17 @@ function refreshBoard(): void {
  * it should not clatter.
  */
 function retranslateBoard(): void {
-  for (const row of boardRows) {
-    const label = statuses[lang][row.statusIndex];
-    if (label) void row.status.set(label, { immediate: true });
+  if (!board) return;
+  board.setOptions({ labels: boardLabels() });
+  for (let r = 0; r < ROW_COUNT; r += 1) {
+    const label = statuses[lang][statusIndexes[r] ?? 0];
+    const display = board.cell(r, 4);
+    if (!label || !display) continue;
+    // The drum itself is in the other language, so swap the leaves before
+    // asking for one. Rebuilding paints rather than turns, and the set is
+    // immediate, so the column stays still and silent.
+    display.setOptions({ words: [...statuses[lang]] });
+    void display.set(label, { immediate: true });
   }
 }
 
