@@ -60,22 +60,23 @@ Publishing reads `NPM_TOKEN` from the `npm` environment rather than from the
 repository secrets, so the token is restricted to `main` by that environment's
 deployment-branch rule and cannot be read from a pull request branch.
 
-The first release is pinned to `0.1.0` by `initial-version`. Without it
-release-please would open at `1.0.0`, since it treats a repository with no tag
-as shipping its initial version.
+The first release is `1.0.0`, set by `initial-version` in
+`release-please-config.json`. Until a release exists release-please has no
+previous version to bump from, so that value decides the opening one on its
+own, whatever the commits say.
 
-While the package is below `1.0.0` the minor is reserved for breaking changes,
-so the bumps read:
+From there the bumps are plain semver:
 
 | Commit         | Bump  | Example        |
 | -------------- | ----- | -------------- |
-| breaking (`!`) | minor | 0.1.0 -> 0.2.0 |
-| `feat`         | patch | 0.1.0 -> 0.1.1 |
-| `fix`, `perf`  | patch | 0.1.0 -> 0.1.1 |
+| breaking (`!`) | major | 1.0.0 -> 2.0.0 |
+| `feat`         | minor | 1.0.0 -> 1.1.0 |
+| `fix`, `perf`  | patch | 1.0.0 -> 1.0.1 |
 
-This is what `bump-minor-pre-major` and `bump-patch-for-minor-pre-major` do in
-`release-please-config.json`. Both stop applying at `1.0.0`, where the bumps
-become plain semver.
+Shipping `1.0.0` is a commitment: the public API in `src/index.ts` — options,
+methods, events and the `--sf-*` custom properties — cannot change shape
+without a major. Renaming an option or dropping a CSS variable is breaking,
+even when nothing throws.
 
 ## Notes on the code
 
