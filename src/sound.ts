@@ -1,21 +1,30 @@
 /**
  * A short mechanical click, synthesised rather than shipped as an audio file
  * so the package stays dependency- and asset-free.
+ *
+ * The engine below is a page-level singleton, and deliberately so. Every bug
+ * this module has had came from the opposite arrangement — tying the audio
+ * context to whether some display currently wanted sound. Muting tore the
+ * context down, unmuting had to rebuild it, and rebuilding happens outside a
+ * user gesture, which is exactly where browsers refuse to start audio. A
+ * display now owns nothing: it asks for a click and the engine decides.
  */
-export interface Clicker {
-  /** Play one click. Silently does nothing if audio is unavailable. */
-  tick(): void;
-  setVolume(volume: number): void;
-  close(): void;
-}
 
-const NOOP_CLICKER: Clicker = {
-  tick() {},
-  setVolume() {},
-  close() {},
-};
+/** Gestures a browser accepts as permission to start playing audio. */
+const GESTURES = ["pointerdown", "keydown", "touchend"] as const;
 
 type AudioContextCtor = typeof AudioContext;
+
+interface Engine {
+  ctx: AudioContext;
+  /** One burst of decaying noise, reused for every click. */
+  noise: AudioBuffer;
+}
+
+let engine: Engine | null = null;
+/** Set once construction has failed, so it is not retried on every flip. */
+let unavailable = false;
+let unlockArmed = false;
 
 function getAudioContextCtor(): AudioContextCtor | null {
   if (typeof window === "undefined") return null;
@@ -26,7 +35,6 @@ function getAudioContextCtor(): AudioContextCtor | null {
   return w.AudioContext ?? w.webkitAudioContext ?? null;
 }
 
-/** Build a burst of white noise once and reuse it for every click. */
 function makeNoiseBuffer(ctx: AudioContext): AudioBuffer {
   const length = Math.floor(ctx.sampleRate * 0.05);
   const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
@@ -38,37 +46,25 @@ function makeNoiseBuffer(ctx: AudioContext): AudioBuffer {
   return buffer;
 }
 
-/*
- * One AudioContext is shared by every clicker on the page.
- *
- * Browsers cap how many a document may hold — Chrome throws past a handful —
- * and a departure board is naturally built from dozens of displays. Giving
- * each its own context would exhaust that budget and silence the lot.
- */
-let shared: AudioContext | null = null;
-let noise: AudioBuffer | null = null;
-let users = 0;
-
-/** Gestures a browser accepts as permission to start playing audio. */
-const GESTURES = ["pointerdown", "keydown", "touchend"] as const;
-
 /**
  * Resume the context on the page's first user gesture.
  *
- * A context built before any interaction starts suspended, and calling
- * `resume()` from outside a gesture does not lift that. Without this, a
- * display created with `sound: true` on a freshly loaded page stays mute
- * until something else happens to build a context at the right moment.
+ * A context built before any interaction starts suspended, and `resume()`
+ * from outside a gesture does not lift that. The handler resolves the engine
+ * when it fires rather than capturing one, so it stays correct even if the
+ * engine was torn down and rebuilt in between.
  */
-function unlockOnGesture(ctx: AudioContext): void {
-  if (typeof document === "undefined") return;
+function armUnlock(): void {
+  if (unlockArmed || typeof document === "undefined") return;
+  unlockArmed = true;
 
   const unlock = () => {
     for (const type of GESTURES) {
       document.removeEventListener(type, unlock, true);
     }
+    unlockArmed = false;
     try {
-      void ctx.resume();
+      void engine?.ctx.resume();
     } catch {
       /* context already gone */
     }
@@ -81,79 +77,120 @@ function unlockOnGesture(ctx: AudioContext): void {
   }
 }
 
-function acquire(): AudioContext | null {
+/** The engine, built on first use. Null where Web Audio is unavailable. */
+function getEngine(): Engine | null {
+  if (engine) return engine;
+  if (unavailable) return null;
+
   const Ctor = getAudioContextCtor();
-  if (!Ctor) return null;
-  if (!shared) {
-    shared = new Ctor();
-    noise = makeNoiseBuffer(shared);
-    unlockOnGesture(shared);
+  if (!Ctor) {
+    unavailable = true;
+    return null;
   }
-  return shared;
+
+  try {
+    const ctx = new Ctor();
+    engine = { ctx, noise: makeNoiseBuffer(ctx) };
+    armUnlock();
+    return engine;
+  } catch {
+    unavailable = true;
+    return null;
+  }
 }
 
-/** Drop the shared context once the last clicker using it has closed. */
-function release(): void {
-  users = Math.max(0, users - 1);
-  if (users > 0 || !shared) return;
+function clamp(volume: number): number {
+  return Math.min(1, Math.max(0, volume));
+}
+
+/**
+ * Play one click. Does nothing, quietly, where audio is unavailable or the
+ * page has not yet been interacted with.
+ */
+export function playClick(volume = 0.25): void {
+  const active = getEngine();
+  if (!active) return;
+
+  const { ctx, noise } = active;
   try {
-    void shared.close();
+    // Browsers hold the context suspended until a user gesture happens;
+    // `armUnlock` handles the case where none has arrived yet.
+    if (ctx.state === "suspended") void ctx.resume();
+    if (ctx.state !== "running") return;
+
+    const now = ctx.currentTime;
+    const source = ctx.createBufferSource();
+    source.buffer = noise;
+    // Slight detune per click so a row of flaps does not sound looped.
+    source.playbackRate.value = 0.85 + Math.random() * 0.3;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = "bandpass";
+    filter.frequency.value = 1800 + Math.random() * 900;
+    filter.Q.value = 1.1;
+
+    const envelope = ctx.createGain();
+    envelope.gain.setValueAtTime(clamp(volume), now);
+    envelope.gain.exponentialRampToValueAtTime(0.0001, now + 0.05);
+
+    source.connect(filter).connect(envelope).connect(ctx.destination);
+    source.start(now);
+    source.stop(now + 0.06);
+  } catch {
+    // Audio is a garnish; never let it break the display.
+  }
+}
+
+/**
+ * Release the audio device.
+ *
+ * Nothing in the library calls this: displays are created and destroyed, and
+ * sound is muted and unmuted, without the engine noticing. It exists for
+ * hosts that need the device back, and for tests. The next click rebuilds —
+ * though on a page that has already seen a gesture, not before one.
+ */
+export function closeAudio(): void {
+  const active = engine;
+  engine = null;
+  unavailable = false;
+  if (!active) return;
+  try {
+    void active.ctx.close();
   } catch {
     /* already closed */
   }
-  shared = null;
-  noise = null;
 }
 
-export function createClicker(volume = 0.25): Clicker {
-  if (!getAudioContextCtor()) return NOOP_CLICKER;
+/** A handle that plays clicks at a fixed volume. */
+export interface Clicker {
+  /** Play one click. Silently does nothing if audio is unavailable. */
+  tick(): void;
+  setVolume(volume: number): void;
+  /** Stop this handle from playing. Leaves the shared engine running. */
+  close(): void;
+}
 
-  users += 1;
+/**
+ * A `Clicker` bound to a volume.
+ *
+ * Kept for callers who hold a handle rather than passing a volume per click.
+ * `close()` silences the handle only — it no longer tears the audio context
+ * down, which is what used to leave a page mute after a mute/unmute cycle.
+ * Use `closeAudio()` when you really do want the device released.
+ */
+export function createClicker(volume = 0.25): Clicker {
+  let gain = clamp(volume);
   let closed = false;
-  let gain = volume;
 
   return {
     tick() {
-      try {
-        if (closed) return;
-        const ctx = acquire();
-        if (!ctx) return;
-
-        // Browsers hold the context suspended until a user gesture happens.
-        if (ctx.state === "suspended") void ctx.resume();
-        if (ctx.state !== "running" || !noise) return;
-
-        const now = ctx.currentTime;
-        const source = ctx.createBufferSource();
-        source.buffer = noise;
-        // Slight detune per click so a row of flaps does not sound looped.
-        source.playbackRate.value = 0.85 + Math.random() * 0.3;
-
-        const filter = ctx.createBiquadFilter();
-        filter.type = "bandpass";
-        filter.frequency.value = 1800 + Math.random() * 900;
-        filter.Q.value = 1.1;
-
-        const envelope = ctx.createGain();
-        envelope.gain.setValueAtTime(gain, now);
-        envelope.gain.exponentialRampToValueAtTime(0.0001, now + 0.05);
-
-        source.connect(filter).connect(envelope).connect(ctx.destination);
-        source.start(now);
-        source.stop(now + 0.06);
-      } catch {
-        // Audio is a garnish; never let it break the display.
-      }
+      if (!closed) playClick(gain);
     },
     setVolume(next: number) {
-      gain = Math.min(1, Math.max(0, next));
+      gain = clamp(next);
     },
     close() {
-      // Idempotent: a double close must not release another clicker's claim
-      // on the shared context.
-      if (closed) return;
       closed = true;
-      release();
     },
   };
 }

@@ -1,7 +1,7 @@
 export { SplitFlap } from "./core.js";
 export { alphabets, resolveAlphabet, deaccent } from "./alphabets.js";
 export { ensureStyles, styles } from "./styles.js";
-export { createClicker } from "./sound.js";
+export { createClicker, playClick, closeAudio } from "./sound.js";
 export { SplitFlapElement, defineSplitFlapElement } from "./element.js";
 
 export type { AlphabetName } from "./alphabets.js";

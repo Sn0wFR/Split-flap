@@ -1,5 +1,5 @@
 import { deaccent, resolveAlphabet } from "./alphabets.js";
-import { createClicker, type Clicker } from "./sound.js";
+import { playClick } from "./sound.js";
 import { ensureStyles } from "./styles.js";
 import type {
   FlipDetail,
@@ -112,7 +112,6 @@ export class SplitFlap {
   private target: string[];
   private settleResolvers: Array<() => void> = [];
   private pending = 0;
-  private clicker: Clicker | null = null;
   private destroyed = false;
   /**
    * Cached `--sf-shade-max`. Reading it costs a forced style recalculation
@@ -330,13 +329,6 @@ export class SplitFlap {
         !!patch.respectReducedMotion,
       );
     }
-    if ("volume" in patch && this.clicker) {
-      this.clicker.setVolume(this.opts.volume);
-    }
-    if (!this.opts.sound && this.clicker) {
-      this.clicker.close();
-      this.clicker = null;
-    }
 
     if (rebuilds) {
       this.cancelAll();
@@ -376,8 +368,6 @@ export class SplitFlap {
     if (this.destroyed) return;
     this.cancelAll();
     this.resolveSettle();
-    this.clicker?.close();
-    this.clicker = null;
     this.flaps = [];
     this.root.replaceChildren();
     this.root.classList.remove("sf", "sf--respect-motion", "is-flipping");
@@ -604,7 +594,7 @@ export class SplitFlap {
     flap.remaining -= 1;
     const final = flap.remaining === 0;
 
-    this.clicks()?.tick();
+    if (this.opts.sound) playClick(this.opts.volume);
     this.emit("flip", { index, char: next, final });
 
     flap.timer = setTimeout(() => {
@@ -653,19 +643,6 @@ export class SplitFlap {
         fill: "both",
       }),
     ];
-  }
-
-  /**
-   * The clicker, built the first time a flip actually needs it.
-   *
-   * Creating it here rather than when a value is set is what lets sound
-   * switched on mid-flight be heard for the rest of that flip: `setOptions`
-   * closes the clicker when sound goes off, and nothing would rebuild it
-   * until the next `set()`.
-   */
-  private clicks(): Clicker | null {
-    if (!this.opts.sound) return null;
-    return (this.clicker ??= createClicker(this.opts.volume));
   }
 
   private jittered(base: number): number {

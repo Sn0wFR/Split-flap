@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SplitFlap } from "../src/core.js";
+import { closeAudio } from "../src/sound.js";
 import { stubAudio } from "./audio-stub.js";
 
 let host: HTMLElement;
@@ -446,10 +447,11 @@ describe("sound", () => {
   });
 
   afterEach(() => {
-    // The AudioContext is shared and reference-counted at module scope, so
-    // a clicker left open here would still be holding the previous test's
-    // stub when the next one starts counting.
     for (const board of boards.splice(0)) board.destroy();
+    // The engine is page-scoped by design, so it outlives the displays and
+    // would still hold the previous test's stub. This is what closeAudio is
+    // for — nothing in the library itself needs to call it.
+    closeAudio();
     vi.unstubAllGlobals();
   });
 
