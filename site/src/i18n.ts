@@ -272,6 +272,13 @@ export const apiOptions: Row[] = [
     en: "Text to display.",
   },
   {
+    name: "words",
+    type: "string[]",
+    fallback: "—",
+    fr: "Mots entiers à faire défiler au lieu de caractères, comme le module destination d'un vrai tableau. Le volet devient unique et s'élargit au mot le plus long ; « chars », « length » et « align » ne s'appliquent plus.",
+    en: "Whole words to turn through instead of characters, like the destination unit on a real board. The display becomes a single flap sized to the longest word; `chars`, `length` and `align` no longer apply.",
+  },
+  {
     name: "length",
     type: "number",
     fallback: "auto",

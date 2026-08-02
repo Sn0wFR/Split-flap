@@ -70,6 +70,14 @@ describe("<split-flap>", () => {
     expect(readTop(off)).toBe("hi");
   });
 
+  it("turns a comma-separated words attribute into a word module", () => {
+    const node = mount(
+      '<split-flap words="PARIS, LONDON, MADRID" value="LONDON"></split-flap>',
+    );
+    expect(node.querySelectorAll(".sf__flap").length).toBe(1);
+    expect(readTop(node)).toBe("LONDON");
+  });
+
   it("applies the theme attribute as a class", () => {
     const node = mount('<split-flap value="A" theme="amber"></split-flap>');
     expect(node.classList.contains("sf--amber")).toBe(true);
