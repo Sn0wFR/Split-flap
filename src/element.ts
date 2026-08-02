@@ -1,5 +1,10 @@
 import { SplitFlap } from "./core.js";
-import type { Align, SplitFlapOptions, ThemeName } from "./types.js";
+import type {
+  Align,
+  SetOptions,
+  SplitFlapOptions,
+  ThemeName,
+} from "./types.js";
 
 /**
  * `<split-flap>` — the same display as a native custom element.
@@ -95,9 +100,15 @@ export class SplitFlapElement extends HTMLElement {
     this.setAttribute("value", next);
   }
 
-  /** Animate to a value and await the settle, bypassing the attribute. */
-  set(next: string): Promise<void> {
-    return this.display?.set(next) ?? Promise.resolve();
+  /**
+   * Animate to a value and await the settle, bypassing the attribute.
+   *
+   * Options are forwarded to the display, so `{ immediate: true }` repaints
+   * without animating — the only way to reset a board that already shows a
+   * value without the two animations colliding.
+   */
+  set(next: string, setOptions?: SetOptions): Promise<void> {
+    return this.display?.set(next, setOptions) ?? Promise.resolve();
   }
 
   /**
