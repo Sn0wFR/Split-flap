@@ -28,14 +28,14 @@ jobs:
     needs: release-please
     if: needs.release-please.outputs.released == 'true'
     runs-on: ubuntu-latest
-    # NPM_TOKEN lives in this environment rather than in the repository
-    # secrets, so its deployment-branch rule can keep the token unreadable
-    # from anywhere but main. The name must match Settings -> Environments
-    # exactly, or the job waits on an environment that does not exist.
+    # Declared to npm as part of the trusted publisher, so the OIDC token
+    # this job presents carries a matching environment claim. Renaming it
+    # here means renaming it in the package settings too.
     environment: npm
     permissions:
       contents: read
-      # Required for npm provenance attestations.
+      # Mints the OIDC token npm exchanges for publish rights, and signs the
+      # provenance attestation. Nothing publishes without it.
       id-token: write
     steps:
       - uses: actions/checkout@v4
@@ -44,16 +44,20 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
           registry-url: https://registry.npmjs.org
+
+      # Trusted publishing needs npm 11.5.1 or newer, which is ahead of what
+      # any current Node release bundles. Upgrading explicitly keeps this
+      # working regardless of what Node 24 happens to ship with.
+      - run: npm install -g npm@latest
 
       - run: npm ci
       - run: npm test
       - run: npm run build
 
-      # NPM_TOKEN: a granular access token limited to @sn0wfr/split-flap,
-      # stored as a secret on the `npm` environment.
+      # No token: npm trades the job's OIDC identity for publish rights,
+      # having checked it against the trusted publisher registered on the
+      # package — this repository, this workflow file, this environment.
       - run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

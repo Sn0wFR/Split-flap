@@ -22,9 +22,11 @@ jobs:
           # commitlint needs the full history to diff a PR's commit range.
           fetch-depth: 0
 
+      # Matches the version the publish job builds with, so what CI proves
+      # green is what ships.
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
 
       - run: npm ci
@@ -55,7 +57,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
 
       - run: npm ci
