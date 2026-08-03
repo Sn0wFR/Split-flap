@@ -159,6 +159,11 @@ new SplitFlap("#voie", {
 niveau AA du WCAG. Un fond seul laisse en place le glyphe quasi blanc du
 thème : parfait sur une couleur sombre, invisible sur une couleur claire.
 
+Colorez les exceptions, pas la règle. Une entrée dont la table n'a pas la clé
+garde les couleurs du thème, et c'est généralement ce qu'il faut pour le cas
+normal : sur un tableau où la plupart des lignes sont à l'heure, toutes les
+peindre en vert fait un mur de vert dont les exceptions doivent s'extraire.
+
 Une fonction colore par position plutôt que par valeur. Elle reçoit l'entrée et
 l'index du volet ; `null` signifie « pas de couleur » :
 

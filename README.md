@@ -157,6 +157,11 @@ new SplitFlap("#gate", {
 together. A background on its own leaves the theme's near-white glyph in
 place, which is fine on a dark colour and invisible on a light one.
 
+Colour the exceptions, not the rule. An entry the map has no key for keeps the
+theme's own colours, and that is usually the right answer for the normal case
+— on a board where most rows are running to time, painting them all green
+makes a wall of green the exceptions have to fight their way out of.
+
 Pass a function to colour by position instead of by value. It is handed the
 entry and the flap's index, and `null` means no colour:
 
