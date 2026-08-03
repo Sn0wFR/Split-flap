@@ -225,32 +225,40 @@ export const heroPhrases: Record<Lang, string[]> = {
   en: ["SPLIT FLAP", "DEPART 1240", "NOW BOARDING", "GATE 24", "ON TIME"],
 };
 
-/** Status column of the departure board demo. */
+/**
+ * Status column of the departure board demo.
+ *
+ * Spelt out in full rather than abbreviated: a word module carries one whole
+ * word per leaf, so there is no per-character budget to save — the flap just
+ * widens to the longest entry.
+ */
 export const statuses: Record<Lang, string[]> = {
   fr: [
-    "A L HEURE",
-    "EMBARQUE",
-    "RETARDE",
-    "DERNIER APL",
-    "ANNULE",
-    "PORTE OUV",
+    "A L'HEURE",
+    "EMBARQUEMENT",
+    "RETARDÉ",
+    "DERNIER APPEL",
+    "ANNULÉ",
+    "PORTE OUVERTE",
   ],
   en: ["ON TIME", "BOARDING", "DELAYED", "LAST CALL", "CANCELLED", "GATE OPEN"],
 };
 
 /**
  * A colour per status, in the order `statuses` lists them — the same order in
- * both languages, so one list covers the two. Green runs to time, blue is
- * information, amber asks you to pay attention, red is the flight you have
- * lost.
+ * both languages, so one list covers the two.
+ *
+ * It reads as an escalation: green runs to time, blue is information (the
+ * gate is open, then you are boarding through it), amber asks you to pay
+ * attention, orange says now or never, red is the flight you have lost.
  */
 export const statusPalette = [
   "green",
   "blue",
   "amber",
-  "amber",
+  "orange",
   "red",
-  "slate",
+  "blue",
 ] as const;
 
 export const destinations = [
@@ -381,8 +389,8 @@ export const apiOptions: Row[] = [
     name: "colors",
     type: "ColorMap",
     fallback: "—",
-    fr: "Fond et couleur de glyphe d'un volet, selon ce qu'il affiche — rouge pour un vol annulé, ambre pour un retard, vert pour un départ à l'heure. Une fonction (entrée, index) colore par position. Cinq paires prêtes à l'emploi dans « flapColors ».",
-    en: "Flap background and glyph colour, by what it shows — red for a cancelled flight, amber for a delay, green for on time. A function (entry, index) colours by position instead. Five ready-made pairs ship in `flapColors`.",
+    fr: "Fond et couleur de glyphe d'un volet, selon ce qu'il affiche — rouge pour un vol annulé, ambre pour un retard, vert pour un départ à l'heure. Une fonction (entrée, index) colore par position. Six paires prêtes à l'emploi dans « flapColors ».",
+    en: "Flap background and glyph colour, by what it shows — red for a cancelled flight, amber for a delay, green for on time. A function (entry, index) colours by position instead. Six ready-made pairs ship in `flapColors`.",
   },
   {
     name: "size",

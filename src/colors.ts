@@ -29,6 +29,12 @@ export const flapColors = {
   /** Cancelled, out of service, anything that has gone wrong. */
   red: { bg: "#a32b22", bgBottom: "#8f261e", color: "#fdeceb" },
 
+  /**
+   * Last call, closing shortly — a warning that has run out of patience.
+   * Sits between amber and red, which is exactly where it reads on a board.
+   */
+  orange: { bg: "#b0530c", bgBottom: "#9b490b", color: "#fff6f0" },
+
   /** Delayed, platform changed — a warning, not a failure. */
   amber: { bg: "#d9a406", bgBottom: "#bf9005", color: "#241802" },
 

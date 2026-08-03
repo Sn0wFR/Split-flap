@@ -154,10 +154,10 @@ new SplitFlap("#voie", {
 });
 ```
 
-`flapColors` livre cinq paires prêtes à l'emploi — `red`, `amber`, `green`,
-`blue`, `slate` — chacune un fond et un glyphe qui passent ensemble le niveau
-AA du WCAG. Un fond seul laisse en place le glyphe quasi blanc du thème :
-parfait sur une couleur sombre, invisible sur une couleur claire.
+`flapColors` livre six paires prêtes à l'emploi — `red`, `orange`, `amber`,
+`green`, `blue`, `slate` — chacune un fond et un glyphe qui passent ensemble le
+niveau AA du WCAG. Un fond seul laisse en place le glyphe quasi blanc du
+thème : parfait sur une couleur sombre, invisible sur une couleur claire.
 
 Une fonction colore par position plutôt que par valeur. Elle reçoit l'entrée et
 l'index du volet ; `null` signifie « pas de couleur » :

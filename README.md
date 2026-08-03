@@ -152,8 +152,8 @@ new SplitFlap("#gate", {
 });
 ```
 
-`flapColors` ships five ready-made pairs — `red`, `amber`, `green`, `blue`,
-`slate` — each one a background and a glyph colour that clears WCAG AA
+`flapColors` ships six ready-made pairs — `red`, `orange`, `amber`, `green`,
+`blue`, `slate` — each one a background and a glyph colour that clears WCAG AA
 together. A background on its own leaves the theme's near-white glyph in
 place, which is fine on a dark colour and invisible on a light one.
 
