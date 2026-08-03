@@ -248,17 +248,23 @@ export const statuses: Record<Lang, string[]> = {
  * A colour per status, in the order `statuses` lists them — the same order in
  * both languages, so one list covers the two.
  *
- * It reads as an escalation: green runs to time, blue is information (the
- * gate is open, then you are boarding through it), amber asks you to pay
- * attention, orange says now or never, red is the flight you have lost.
+ * On time is deliberately unpainted. Most rows on a real board are running to
+ * time, and colouring them all green makes a wall of green the exceptions
+ * have to fight their way out of. Left alone, every colour on the board means
+ * "this one is different", which is the whole point of having them.
+ *
+ * The rest reads as an escalation. Slate is the odd one: the gate being open
+ * is the only status that asks nothing of you — you may walk down, but nobody
+ * is boarding yet — so it separates from boarding on saturation rather than
+ * hue, which survives being read from across a hall.
  */
 export const statusPalette = [
-  "green",
+  null,
   "blue",
   "amber",
   "orange",
   "red",
-  "blue",
+  "slate",
 ] as const;
 
 export const destinations = [
