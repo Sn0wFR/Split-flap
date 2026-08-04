@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.2.0](https://github.com/Sn0wFR/Split-flap/compare/split-flap-v1.1.1...split-flap-v1.2.0) (2026-08-04)
+
+
+### Features
+
+* **core:** colour a flap by the glyph or word it shows ([7492bb6](https://github.com/Sn0wFR/Split-flap/commit/7492bb66635ee96757f6dab0b51c6833da2bc2c7))
+* **core:** let a colour map answer null, and repaint an invisible status ([736f7e6](https://github.com/Sn0wFR/Split-flap/commit/736f7e639fc18d4a41eda1389b6adcca5d7286cc))
+* **core:** let a colour map answer null, and repaint an invisible status ([5a909e0](https://github.com/Sn0wFR/Split-flap/commit/5a909e0ba7d5b5863fde3a8375976fe2df54b2c2))
+* **site:** leave an on-time departure unpainted ([0b86920](https://github.com/Sn0wFR/Split-flap/commit/0b8692080f2c1bb7af91ccbd4b7f0b1a07593ec9))
+* **site:** leave an on-time departure unpainted ([e8e743e](https://github.com/Sn0wFR/Split-flap/commit/e8e743e49fadf1b57029c8e627966572c3734300))
+* **site:** spell the demo statuses out, and add an orange flap colour ([b3a045a](https://github.com/Sn0wFR/Split-flap/commit/b3a045ab00d1d6950f489dd917239d1b8bdfe4db))
+* **site:** spell the demo statuses out, and add an orange flap colour ([7f4b061](https://github.com/Sn0wFR/Split-flap/commit/7f4b0610b4040a706cdd603945056d28ff871089))
+
 ## [1.1.1](https://github.com/Sn0wFR/Split-flap/compare/split-flap-v1.1.0...split-flap-v1.1.1) (2026-08-02)
 
 
