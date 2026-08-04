@@ -335,14 +335,17 @@ let board: SplitFlapBoard | null = null;
 /**
  * The status column's colours, keyed by the word on the leaf.
  *
- * Rebuilt per language rather than stored, because the keys are the statuses
+ * Built per language rather than stored, because the keys are the statuses
  * themselves — a French board looks up ANNULE, an English one CANCELLED.
  */
 function statusColors(): ColorMap {
   const map: ColorMap = {};
   statuses[lang].forEach((status, i) => {
     const name = statusPalette[i];
-    if (name) map[status] = flapColors[name];
+    // An empty slot is handed over as `null` rather than left out: the
+    // display folds that to "no paint" itself, so what the palette says and
+    // what the board is told stay the same shape.
+    map[status] = name ? flapColors[name] : null;
   });
   return map;
 }
@@ -443,6 +446,12 @@ function retranslateBoard(): void {
   if (!board) return;
   board.setOptions({ labels: boardLabels() });
 
+  // Built once, not once per row: every cell in the column carries the same
+  // drum and the same palette, and a fresh object each time would have the
+  // display rebuild its palette six times over for one language switch.
+  const words = [...statuses[lang]];
+  const colors = statusColors();
+
   for (let r = 0; r < ROW_COUNT; r += 1) {
     const display = board.cell(r, 4);
     if (!display) continue;
@@ -451,10 +460,7 @@ function retranslateBoard(): void {
     // otherwise the first fill asks for a French status on an English drum
     // and lands on the blank leaf. The colours are keyed by those same
     // words, so they have to be handed over in the same breath.
-    display.setOptions({
-      words: [...statuses[lang]],
-      colors: statusColors(),
-    });
+    display.setOptions({ words, colors });
 
     // Rebuilding paints rather than turns, and the set is immediate, so the
     // column stays still and silent.

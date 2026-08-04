@@ -115,8 +115,8 @@ volet imprimé `GENÈVE`. En HTML, la liste est séparée par des virgules :
 ### Couleurs
 
 Un vrai tableau ne peint pas tous ses volets pareil. `colors` donne à un volet
-son propre fond et sa propre couleur de glyphe selon ce qu'il affiche : rouge
-pour un train supprimé, ambre pour un retard, vert pour un départ à l'heure.
+son propre fond et sa propre couleur de glyphe selon ce qu'il affiche : ambre
+pour un retard, rouge pour une suppression.
 
 ```js
 import { SplitFlap, flapColors } from "@sn0wfr/split-flap";
@@ -124,7 +124,6 @@ import { SplitFlap, flapColors } from "@sn0wfr/split-flap";
 const statut = new SplitFlap("#statut", {
   words: ["A L'HEURE", "RETARDÉ", "SUPPRIMÉ"],
   colors: {
-    "A L'HEURE": flapColors.green,
     RETARDÉ: flapColors.amber,
     SUPPRIMÉ: flapColors.red,
   },
@@ -132,6 +131,9 @@ const statut = new SplitFlap("#statut", {
 
 await statut.set("SUPPRIMÉ"); // le volet qui tombe est déjà le rouge
 ```
+
+`A L'HEURE` n'a pas de clé, volontairement : il garde les volets du thème, si
+bien que les deux couleurs présentes sont les deux états qui méritent l'œil.
 
 La couleur voyage avec le volet, pas avec le cadre : un module qui passe du
 rouge au vert laisse tomber un volet rouge sur un volet vert, comme un vrai
@@ -159,13 +161,22 @@ new SplitFlap("#voie", {
 niveau AA du WCAG. Un fond seul laisse en place le glyphe quasi blanc du
 thème : parfait sur une couleur sombre, invisible sur une couleur claire.
 
-Colorez les exceptions, pas la règle. Une entrée dont la table n'a pas la clé
-garde les couleurs du thème, et c'est généralement ce qu'il faut pour le cas
-normal : sur un tableau où la plupart des lignes sont à l'heure, toutes les
-peindre en vert fait un mur de vert dont les exceptions doivent s'extraire.
+D'où la règle : colorez les exceptions, pas la règle. Sur un tableau où la
+plupart des lignes sont à l'heure, toutes les peindre fait un aplat de couleur
+dont les exceptions doivent s'extraire. Laisser le cas normal nu oblige en
+revanche les couleurs à se détacher aussi bien du volet nu que les unes des
+autres : préférez donc une couleur saturée à une couleur sourde — `slate`, sur
+le thème sombre par défaut, est trop proche du fond pour s'en distinguer.
+
+Une clé peut aussi valoir `null`, pour une table construite à partir de données
+plutôt qu'écrite à la main :
+
+```js
+colors: { "A L'HEURE": null, RETARDÉ: flapColors.amber };
+```
 
 Une fonction colore par position plutôt que par valeur. Elle reçoit l'entrée et
-l'index du volet ; `null` signifie « pas de couleur » :
+l'index du volet ; là aussi, `null` signifie « pas de couleur » :
 
 ```js
 new SplitFlap("#board", {

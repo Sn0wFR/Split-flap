@@ -246,17 +246,20 @@ export const statuses: Record<Lang, string[]> = {
 
 /**
  * A colour per status, in the order `statuses` lists them — the same order in
- * both languages, so one list covers the two.
+ * both languages, so one list covers the two. `null` leaves a status on the
+ * theme's own flaps.
  *
- * On time is deliberately unpainted. Most rows on a real board are running to
- * time, and colouring them all green makes a wall of green the exceptions
- * have to fight their way out of. Left alone, every colour on the board means
- * "this one is different", which is the whole point of having them.
+ * On time is the unpainted one. A real board is mostly on-time rows, and
+ * painting them all makes a field of colour the exceptions have to fight
+ * their way out of; left alone, every colour that appears means "this one is
+ * different". The demo draws its statuses uniformly rather than realistically,
+ * so it shows the mechanism rather than the full effect.
  *
- * The rest reads as an escalation. Slate is the odd one: the gate being open
- * is the only status that asks nothing of you — you may walk down, but nobody
- * is boarding yet — so it separates from boarding on saturation rather than
- * hue, which survives being read from across a hall.
+ * That leaves five paints for five statuses, and each has to be legible
+ * against bare flaps as well as against each other. A muted colour cannot be:
+ * slate is only 1.7:1 against the theme background, so a slate flap and an
+ * unpainted one read the same from any distance. Green and blue both clear
+ * 2.8:1 and separate on hue, which is what survives.
  */
 export const statusPalette = [
   null,
@@ -264,7 +267,7 @@ export const statusPalette = [
   "amber",
   "orange",
   "red",
-  "slate",
+  "green",
 ] as const;
 
 export const destinations = [
@@ -395,8 +398,8 @@ export const apiOptions: Row[] = [
     name: "colors",
     type: "ColorMap",
     fallback: "—",
-    fr: "Fond et couleur de glyphe d'un volet, selon ce qu'il affiche — rouge pour un vol annulé, ambre pour un retard, vert pour un départ à l'heure. Une fonction (entrée, index) colore par position. Six paires prêtes à l'emploi dans « flapColors ».",
-    en: "Flap background and glyph colour, by what it shows — red for a cancelled flight, amber for a delay, green for on time. A function (entry, index) colours by position instead. Six ready-made pairs ship in `flapColors`.",
+    fr: "Fond et couleur de glyphe d'un volet, selon ce qu'il affiche — rouge pour un vol annulé, ambre pour un retard, orange pour un dernier appel. Une entrée sans clé garde les couleurs du thème : colorez les exceptions, pas la règle. Une fonction (entrée, index) colore par position. Six paires prêtes à l'emploi dans « flapColors ».",
+    en: "Flap background and glyph colour, by what it shows — red for a cancelled flight, amber for a delay, orange for a last call. An entry with no key keeps the theme's colours: colour the exceptions, not the rule. A function (entry, index) colours by position instead. Six ready-made pairs ship in `flapColors`.",
   },
   {
     name: "size",
