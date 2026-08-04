@@ -37,9 +37,13 @@ export type FlapColor = string | FlapColors;
  *
  * As a function it is handed the entry and the flap's position instead, so a
  * fixed flap can be coloured whatever it happens to show.
+ *
+ * Either form may answer `null` for "leave this one alone", which matters
+ * when the map is built from data rather than written by hand — a status
+ * table with an explicit blank does not have to be filtered first.
  */
 export type ColorMap =
-  | Record<string, FlapColor>
+  | Record<string, FlapColor | null | undefined>
   | ((entry: string, index: number) => FlapColor | null | undefined);
 
 export interface SplitFlapOptions {
@@ -107,17 +111,19 @@ export interface SplitFlapOptions {
   theme?: ThemeName;
 
   /**
-   * Colour flaps by what they show — red for CANCELLED, green for ON TIME.
+   * Colour flaps by what they show — amber for DELAYED, red for CANCELLED.
    *
    * The colour rides the leaf rather than the frame: a flap turning from red
    * to green drops a red leaf onto a green one, the way a real board carries
    * the colour on the leaf itself.
    *
+   * An entry with no key keeps the theme's own colours, which is usually
+   * right for the normal case — colour the exceptions, not the rule.
+   *
    * ```ts
    * new SplitFlap("#status", {
    *   words: ["ON TIME", "DELAYED", "CANCELLED"],
    *   colors: {
-   *     "ON TIME": flapColors.green,
    *     DELAYED: flapColors.amber,
    *     CANCELLED: flapColors.red,
    *   },

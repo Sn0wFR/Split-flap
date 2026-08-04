@@ -5,9 +5,9 @@ import type { FlapColor, FlapColors } from "./types.js";
  *
  * A real board only colours the leaves it needs to shout about, and it does
  * so with a handful of paints that never change: red for cancelled, amber
- * for delayed, green for on time. These are those paints, each one shipped
- * as a pair — background and glyph together — because a background on its
- * own is how you end up with white text on yellow.
+ * for delayed, orange for a last call. These are those paints, each one
+ * shipped as a pair — background and glyph together — because a background
+ * on its own is how you end up with white text on yellow.
  *
  * ```ts
  * import { SplitFlap, flapColors } from "@sn0wfr/split-flap";
@@ -15,15 +15,19 @@ import type { FlapColor, FlapColors } from "./types.js";
  * new SplitFlap("#status", {
  *   words: ["ON TIME", "DELAYED", "CANCELLED"],
  *   colors: {
- *     "ON TIME": flapColors.green,
  *     DELAYED: flapColors.amber,
  *     CANCELLED: flapColors.red,
  *   },
  * });
  * ```
  *
- * Each pair clears WCAG AA on its own, and the lower half is a shade darker
- * so a coloured flap keeps the depth the default theme has.
+ * ON TIME has no key on purpose: it keeps the theme's own flaps, so the two
+ * colours that do appear are the two rows worth looking at.
+ *
+ * Each pair clears WCAG AA against its own glyph. Against a flap you left
+ * unpainted they clear rather less — 2.8:1 for blue, 7.7:1 for amber — so on
+ * a dark theme reach for a saturated paint rather than `slate`, which is
+ * close enough to the default background to disappear beside it.
  */
 export const flapColors = {
   /** Cancelled, out of service, anything that has gone wrong. */
@@ -38,13 +42,17 @@ export const flapColors = {
   /** Delayed, platform changed — a warning, not a failure. */
   amber: { bg: "#d9a406", bgBottom: "#bf9005", color: "#241802" },
 
-  /** On time, boarding, everything as printed. */
+  /** Proceed: the gate is open, everything as printed. */
   green: { bg: "#1c7a45", bgBottom: "#196b3d", color: "#eefaf1" },
 
-  /** Informational: now boarding, gate open. */
+  /** Informational: now boarding. */
   blue: { bg: "#1d6a86", bgBottom: "#1a5d76", color: "#eef8fc" },
 
-  /** Neutral emphasis, for a flap that should stand out without shouting. */
+  /**
+   * Neutral emphasis, for a flap that should stand out without shouting.
+   * Only on a light theme: against a dark one it is barely a shade off the
+   * background, so it cannot be told from a flap you left unpainted.
+   */
   slate: { bg: "#39404a", bgBottom: "#323841", color: "#eceff4" },
 } as const satisfies Record<string, FlapColors>;
 

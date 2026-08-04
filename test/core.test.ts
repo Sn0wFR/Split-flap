@@ -500,6 +500,15 @@ describe("colours", () => {
     expect(topColor(board)).toEqual(["#241802"]);
   });
 
+  it("takes an explicit null as no colour, so a data-built map needs no filtering", () => {
+    const board = new SplitFlap(host, {
+      value: "AB",
+      chars: " AB",
+      colors: { A: null, B: "#ff0000" },
+    });
+    expect(topBg(board)).toEqual(["", "#ff0000"]);
+  });
+
   it("leaves an uncoloured board's flaps entirely alone", () => {
     const board = new SplitFlap(host, { value: "AB", chars: " AB" });
     expect(topBg(board)).toEqual(["", ""]);

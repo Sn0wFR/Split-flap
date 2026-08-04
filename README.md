@@ -114,8 +114,8 @@ leaf printed `GENÈVE`. In markup the list is comma-separated:
 ### Colours
 
 A real board does not paint every leaf the same. `colors` gives a flap its own
-background and glyph colour according to what it shows — red for a cancelled
-service, amber for a delayed one, green for one running to time:
+background and glyph colour according to what it shows — amber for a delayed
+service, red for a cancelled one:
 
 ```js
 import { SplitFlap, flapColors } from "@sn0wfr/split-flap";
@@ -123,7 +123,6 @@ import { SplitFlap, flapColors } from "@sn0wfr/split-flap";
 const status = new SplitFlap("#status", {
   words: ["ON TIME", "DELAYED", "CANCELLED"],
   colors: {
-    "ON TIME": flapColors.green,
     DELAYED: flapColors.amber,
     CANCELLED: flapColors.red,
   },
@@ -131,6 +130,9 @@ const status = new SplitFlap("#status", {
 
 await status.set("CANCELLED"); // the leaf that lands is the red one
 ```
+
+`ON TIME` has no key on purpose: it keeps the theme's own flaps, so the two
+colours that do appear are the two states worth looking at.
 
 The colour rides the leaf rather than the frame: a flap turning from red to
 green drops a red leaf onto a green one, the way a real board carries the
@@ -157,13 +159,22 @@ new SplitFlap("#gate", {
 together. A background on its own leaves the theme's near-white glyph in
 place, which is fine on a dark colour and invisible on a light one.
 
-Colour the exceptions, not the rule. An entry the map has no key for keeps the
-theme's own colours, and that is usually the right answer for the normal case
-— on a board where most rows are running to time, painting them all green
-makes a wall of green the exceptions have to fight their way out of.
+That is the rule of thumb: colour the exceptions, not the rule. On a board
+where most rows are running to time, painting them all makes a field of colour
+the exceptions have to fight their way out of. Leaving the normal case bare
+does mean the paints have to read against bare flaps as well as against each
+other, so prefer a saturated colour to a muted one — `slate` on the dark
+default theme is close enough to the background to vanish beside it.
+
+A key may also be given `null` outright, for a map built from data rather than
+written by hand:
+
+```js
+colors: { "ON TIME": null, DELAYED: flapColors.amber };
+```
 
 Pass a function to colour by position instead of by value. It is handed the
-entry and the flap's index, and `null` means no colour:
+entry and the flap's index, and `null` means no colour there too:
 
 ```js
 new SplitFlap("#board", {
