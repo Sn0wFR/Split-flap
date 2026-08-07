@@ -91,7 +91,10 @@ even when nothing throws.
   injected with no separate asset. tsup does this with esbuild's `text` loader;
   Vite and Vitest need `scripts/vite-css-text.ts`, which redirects the import to
   a virtual module. If you move or rename `src/split-flap.css`, update that
-  plugin.
+  plugin. `test/styles.test.ts` bundles it for real to check the import still
+  yields the stylesheet: the dev pipeline the other tests run on cannot see a
+  bundler reading that module the wrong way, and a board with no stylesheet
+  still renders — as its glyphs doubled up, one on each half of every flap.
 - **Animation is driven by timers, painted by the Web Animations API.** Where
   WAAPI is missing the glyphs still step on schedule, so the text is never
   wrong — only the rotation is lost. Keep that fallback intact.
