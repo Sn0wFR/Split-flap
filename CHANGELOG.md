@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.1](https://github.com/Sn0wFR/Split-flap/compare/split-flap-v1.2.0...split-flap-v1.2.1) (2026-08-08)
+
+
+### Bug Fixes
+
+* **site:** restore the stylesheet the boards are built on ([ff42ead](https://github.com/Sn0wFR/Split-flap/commit/ff42ead6e5249655f9ef3989e0180f9da865b0bb))
+* **site:** restore the stylesheet the boards are built on ([d94bf4e](https://github.com/Sn0wFR/Split-flap/commit/d94bf4edf10b2c9c61c8e45093dc9ba465cbb37e))
+
 ## [1.2.0](https://github.com/Sn0wFR/Split-flap/compare/split-flap-v1.1.1...split-flap-v1.2.0) (2026-08-04)
 
 
