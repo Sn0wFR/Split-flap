@@ -9,8 +9,15 @@ const PREFIX = "\0split-flap-css:";
  * Vite decides what is a stylesheet by matching `.css` at the end of an id
  * (or immediately before a query). Parking the real path behind this suffix
  * keeps the virtual module out of that filter.
+ *
+ * It has to name a language too, not just something that is not CSS. Rolldown
+ * — Vite's bundler since 8 — infers a module's type from the extension on its
+ * id, and treats a `.txt` one as text: the JavaScript returned from `load`
+ * came back out of the build wrapped in a second string literal, so `styles`
+ * held the source `export default "…"` rather than the stylesheet, and every
+ * board rendered unstyled.
  */
-const SUFFIX = ".txt";
+const SUFFIX = ".js";
 
 /** The one stylesheet that must resolve to a string rather than a stylesheet. */
 const TARGET = "split-flap.css";
@@ -44,7 +51,13 @@ export function cssAsText(): Plugin {
     async load(id) {
       if (!id.startsWith(PREFIX)) return null;
       const file = id.slice(PREFIX.length, -SUFFIX.length);
-      return `export default ${JSON.stringify(await readFile(file, "utf8"))};`;
+      return {
+        code: `export default ${JSON.stringify(await readFile(file, "utf8"))};`,
+        // Said outright as well as spelt in the suffix, so the module stays
+        // JavaScript however the id is read. Ignored by Vite's dev pipeline,
+        // which has no module types to infer.
+        moduleType: "js",
+      };
     },
   };
 }
