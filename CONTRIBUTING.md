@@ -79,6 +79,16 @@ From there the bumps are plain semver:
 | `feat`         | minor | 1.0.0 -> 1.1.0 |
 | `fix`, `perf`  | patch | 1.0.0 -> 1.0.1 |
 
+Only what ships to npm decides the version. `site`, `scripts`, `test` and
+`.github` are listed under `exclude-paths` in `release-please-config.json`, so
+a commit whose files all sit in those directories never bumps anything, however
+it is typed — a `feat(site):` on the demo page alone opens no release pull
+request. A commit that touches one of them _and_ `src` still counts, because
+release-please only skips a commit when every one of its files is excluded.
+
+The demo site is not held back by this: `deploy-site.yml` publishes it from
+every push to `main`, on its own, with no version involved.
+
 Shipping `1.0.0` is a commitment: the public API in `src/index.ts` — options,
 methods, events and the `--sf-*` custom properties — cannot change shape
 without a major. Renaming an option or dropping a CSS variable is breaking,
