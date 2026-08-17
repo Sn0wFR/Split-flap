@@ -14,6 +14,7 @@ import {
   apiVars,
   destinations,
   dictionaries,
+  fillSize,
   heroPhrases,
   HTML_KEYS,
   statuses,
@@ -47,9 +48,12 @@ function applyLang(next: Lang): void {
   for (const node of document.querySelectorAll<HTMLElement>("[data-i18n]")) {
     const value = dict[node.dataset.i18n ?? ""];
     if (value === undefined) continue;
+    // The bundle weight is measured at build time, so the strings carry a
+    // placeholder for it rather than a figure of their own.
+    const text = fillSize(value, next);
     // <meta> carries its text in an attribute, not a child node.
-    if (node instanceof HTMLMetaElement) node.content = value;
-    else node.textContent = value;
+    if (node instanceof HTMLMetaElement) node.content = text;
+    else node.textContent = text;
   }
 
   // Authored markup, never user input — safe to assign as HTML.

@@ -14,6 +14,41 @@ export const HTML_KEYS = new Set([
 
 type Dict = Record<string, string>;
 
+/* ===================================================================== */
+/* Bundle weight                                                         */
+/* ===================================================================== */
+
+/** Inlined by the `bundle-size` plugin; `null` when `dist/` is unbuilt. */
+declare const __BUNDLE_GZIP_BYTES__: number | null;
+
+/**
+ * The measured weight, worded for the reader: "5,9 ko gzip" in French,
+ * "5.9 kB gzip" in English. Kilobytes are the decimal kind, which is what a
+ * CDN and every bundle-size badge report.
+ */
+function gzipLabel(lang: Lang): string {
+  if (typeof __BUNDLE_GZIP_BYTES__ !== "number") return "";
+  const kb = new Intl.NumberFormat(lang, {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  }).format(__BUNDLE_GZIP_BYTES__ / 1000);
+  return lang === "fr" ? `${kb} ko gzip` : `${kb} kB gzip`;
+}
+
+/**
+ * Fills the `{size}` placeholder a translated string may carry.
+ *
+ * With nothing measured the whole segment drops out — separator included —
+ * so the line reads "Zéro dépendance · MIT" rather than claiming a blank
+ * weight or a figure nobody checked.
+ */
+export function fillSize(text: string, lang: Lang): string {
+  const label = gzipLabel(lang);
+  return label
+    ? text.replace(/\{size\}/g, label)
+    : text.replace(/\s*·\s*\{size\}|\{size\}\s*·\s*/g, "");
+}
+
 const fr: Dict = {
   "meta.description":
     "Une librairie sans dépendance qui affiche du texte comme un tableau de départs d'aéroport. Vanilla, Web Component et React.",
@@ -31,7 +66,7 @@ const fr: Dict = {
   "sound.off": "Activer le son mécanique",
   "sound.title": "Activer le son mécanique",
 
-  "hero.eyebrow": "Zéro dépendance · 5,9 ko gzip · MIT",
+  "hero.eyebrow": "Zéro dépendance · {size} · MIT",
   "hero.title": "Affichez du texte comme un tableau de départs",
   "hero.lede":
     "Une librairie qui rend n'importe quelle chaîne comme un panneau Solari : chaque volet tourne glyphe par glyphe jusqu'à sa cible, exactement comme la mécanique d'origine.",
@@ -133,7 +168,7 @@ const en: Dict = {
   "sound.off": "Turn on the mechanical sound",
   "sound.title": "Turn on the mechanical sound",
 
-  "hero.eyebrow": "Zero dependencies · 5.9 kB gzip · MIT",
+  "hero.eyebrow": "Zero dependencies · {size} · MIT",
   "hero.title": "Render text like a departure board",
   "hero.lede":
     "A library that renders any string as a Solari board: every flap turns one glyph at a time until it reaches its target, exactly like the original mechanism.",
